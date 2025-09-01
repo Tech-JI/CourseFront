@@ -113,6 +113,7 @@
                   Order
                 </label>
                 <select
+                  id="sort_order"
                   v-model="sorting.sort_order"
                   @change="applyFiltersAndSort"
                   class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
@@ -276,7 +277,11 @@
                       <!-- Quality Score (Auth Only) -->
                       <div v-if="isAuthenticated" class="text-center">
                         <div class="text-2xl font-bold text-indigo-600">
-                          {{ course.quality_score ?? "N/A" }}
+                          {{
+                            course.quality_score > 0
+                              ? course.quality_score.toFixed(1)
+                              : "N/A"
+                          }}
                         </div>
                         <div class="text-xs text-gray-500">Quality</div>
                       </div>
@@ -284,7 +289,11 @@
                       <!-- Difficulty Score (Auth Only) -->
                       <div v-if="isAuthenticated" class="text-center">
                         <div class="text-2xl font-bold text-green-600">
-                          {{ course.difficulty_score ?? "N/A" }}
+                          {{
+                            course.difficulty_score > 0
+                              ? course.difficulty_score.toFixed(1)
+                              : "N/A"
+                          }}
                         </div>
                         <div class="text-xs text-gray-500">Difficulty</div>
                       </div>
