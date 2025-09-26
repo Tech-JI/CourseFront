@@ -1,6 +1,5 @@
 <template>
   <div class="bg-white">
-    <!-- Hero section -->
     <div class="relative isolate px-6 pt-14 lg:px-8">
       <div
         class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80"
@@ -45,7 +44,6 @@
             {{ reviewCount.toLocaleString() }} reviews and counting
           </p>
 
-          <!-- Search section -->
           <div class="mt-10">
             <div class="mx-auto max-w-md">
               <label for="search" class="sr-only">Search for courses</label>
@@ -60,40 +58,39 @@
                 </div>
                 <input
                   id="search"
+                  v-model="searchQuery"
                   name="search"
                   type="search"
-                  v-model="searchQuery"
-                  @keyup.enter="performSearch"
                   class="block w-full rounded-md border-0 bg-white py-3 pl-10 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   placeholder="Search for courses..."
+                  @keyup.enter="performSearch"
                 />
               </div>
               <button
-                @click="performSearch"
                 class="mt-4 w-full rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                @click="performSearch"
               >
                 Search Courses
               </button>
             </div>
           </div>
 
-          <!-- Action buttons -->
           <div class="mt-10 flex items-center justify-center gap-x-6">
             <button
-              @click="goToBestClasses"
               class="rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              @click="goToBestClasses"
             >
               Best Classes
             </button>
             <button
-              @click="goToLayups"
               class="rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              @click="goToLayups"
             >
               Layups {{ !isAuthenticated ? "(login required)" : "" }}
             </button>
             <button
-              @click="goToDepartments"
               class="rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              @click="goToDepartments"
             >
               Browse All
             </button>
@@ -137,15 +134,15 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { MagnifyingGlassIcon } from "@heroicons/vue/24/outline";
+import { useAuth } from "../composables/useAuth";
 
 const router = useRouter();
 const reviewCount = ref(0);
-const isAuthenticated = ref(false);
+const { isAuthenticated } = useAuth();
 const searchQuery = ref("");
 
 onMounted(async () => {
   await fetchLandingData();
-  await checkAuthentication();
 });
 
 const fetchLandingData = async () => {
@@ -161,23 +158,11 @@ const fetchLandingData = async () => {
   }
 };
 
-const checkAuthentication = async () => {
-  try {
-    const response = await fetch("/api/user/status/");
-    if (response.ok) {
-      const data = await response.json();
-      isAuthenticated.value = data.isAuthenticated;
-    }
-  } catch (error) {
-    console.error("Error checking authentication:", error);
-  }
-};
-
 const performSearch = () => {
   if (searchQuery.value.trim().length >= 2) {
     router.push({
-      path: "/courses", // Navigate to the new courses page
-      query: { code: searchQuery.value.trim().toUpperCase() }, // Use 'code' query param
+      path: "/courses",
+      query: { code: searchQuery.value.trim().toUpperCase() },
     });
   } else {
     alert("Search query must be at least 2 characters long");
@@ -199,6 +184,6 @@ const goToLayups = () => {
 };
 
 const goToDepartments = () => {
-  router.push("/courses"); // Simply go to the main courses page
+  router.push("/courses");
 };
 </script>

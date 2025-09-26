@@ -1,7 +1,6 @@
 <template>
   <div class="min-h-full">
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <!-- Page header -->
       <div class="mb-8">
         <h1 class="text-3xl font-bold tracking-tight text-gray-900">Courses</h1>
         <p class="mt-2 text-sm text-gray-700">
@@ -10,7 +9,6 @@
         </p>
       </div>
 
-      <!-- Filters Card -->
       <div class="mb-8">
         <div class="overflow-hidden bg-white shadow sm:rounded-lg">
           <div class="px-4 py-5 sm:p-6">
@@ -18,7 +16,6 @@
               Filters & Sorting
             </h3>
             <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
-              <!-- Department Filter -->
               <div>
                 <label
                   for="department"
@@ -29,8 +26,8 @@
                 <select
                   id="department"
                   v-model="filters.department"
-                  @change="applyFiltersAndSort"
                   class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  @change="applyFiltersAndSort"
                 >
                   <option value="">All Departments</option>
                   <option
@@ -43,7 +40,6 @@
                 </select>
               </div>
 
-              <!-- Course Code Search -->
               <div>
                 <label
                   for="code"
@@ -52,16 +48,15 @@
                   Course Code
                 </label>
                 <input
-                  type="text"
                   id="code"
                   v-model="filters.code"
-                  @keyup.enter="applyFiltersAndSort"
+                  type="text"
                   placeholder="e.g., ECE215"
-                  class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  @keyup.enter="applyFiltersAndSort"
                 />
               </div>
 
-              <!-- Min Quality Filter (Auth Only) -->
               <div v-if="isAuthenticated">
                 <label
                   for="min_quality"
@@ -70,16 +65,15 @@
                   Min Quality
                 </label>
                 <input
-                  type="number"
                   id="min_quality"
                   v-model.number="filters.min_quality"
-                  @change="applyFiltersAndSort"
+                  type="number"
                   min="0"
                   class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  @change="applyFiltersAndSort"
                 />
               </div>
 
-              <!-- Sort By -->
               <div>
                 <label
                   for="sort_by"
@@ -90,8 +84,8 @@
                 <select
                   id="sort_by"
                   v-model="sorting.sort_by"
-                  @change="applyFiltersAndSort"
                   class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  @change="applyFiltersAndSort"
                 >
                   <option value="course_code">Course Code</option>
                   <option value="num_reviews">Number of Reviews</option>
@@ -104,7 +98,6 @@
                 </select>
               </div>
 
-              <!-- Sort Order -->
               <div>
                 <label
                   for="sort_order"
@@ -115,8 +108,8 @@
                 <select
                   id="sort_order"
                   v-model="sorting.sort_order"
-                  @change="applyFiltersAndSort"
                   class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  @change="applyFiltersAndSort"
                 >
                   <option value="asc">Ascending</option>
                   <option value="desc">Descending</option>
@@ -124,17 +117,16 @@
               </div>
             </div>
 
-            <!-- Action Buttons -->
             <div class="mt-6 flex gap-3">
               <button
-                @click="applyFiltersAndSort"
                 class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                @click="applyFiltersAndSort"
               >
                 Apply Filters
               </button>
               <button
-                @click="resetFiltersAndSort"
                 class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                @click="resetFiltersAndSort"
               >
                 Reset
               </button>
@@ -143,7 +135,6 @@
         </div>
       </div>
 
-      <!-- Loading State -->
       <div v-if="loading" class="text-center py-12">
         <div
           class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-white bg-indigo-500"
@@ -172,7 +163,6 @@
         </div>
       </div>
 
-      <!-- Error State -->
       <div v-else-if="error" class="rounded-md bg-red-50 p-4">
         <div class="flex">
           <ExclamationTriangleIcon
@@ -188,16 +178,13 @@
         </div>
       </div>
 
-      <!-- Course Results -->
       <div v-else-if="courses.length > 0">
-        <!-- Results Count -->
         <div class="mb-4 text-sm text-gray-700">
           Showing {{ courses.length }} of {{ pagination.total_courses }} courses
         </div>
 
-        <!-- Course Cards -->
         <div class="overflow-hidden bg-white shadow sm:rounded-md">
-          <ul role="list" class="divide-y divide-gray-200">
+          <ul class="divide-y divide-gray-200">
             <li v-for="course in courses" :key="course.id">
               <router-link
                 :to="`/course/${course.id}`"
@@ -210,7 +197,6 @@
                         {{ course.course_code }}: {{ course.course_title }}
                       </h3>
                       <div class="mt-1 flex items-center text-sm text-gray-500">
-                        <!-- Offered Status -->
                         <span
                           v-if="course.is_offered_in_current_term"
                           class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800"
@@ -230,7 +216,6 @@
                           Not Recently Offered
                         </span>
 
-                        <!-- Instructors -->
                         <span
                           v-if="
                             course.instructors && course.instructors.length > 0
@@ -243,7 +228,6 @@
                         </span>
                       </div>
 
-                      <!-- Distribs -->
                       <div
                         v-if="course.distribs && course.distribs.length > 0"
                         class="mt-2"
@@ -264,9 +248,7 @@
                       </div>
                     </div>
 
-                    <!-- Stats -->
                     <div class="ml-4 flex-shrink-0 flex items-center space-x-4">
-                      <!-- Reviews -->
                       <div class="text-center">
                         <div class="text-2xl font-bold text-gray-900">
                           {{ course.review_count }}
@@ -274,7 +256,6 @@
                         <div class="text-xs text-gray-500">Reviews</div>
                       </div>
 
-                      <!-- Quality Score (Auth Only) -->
                       <div v-if="isAuthenticated" class="text-center">
                         <div class="text-2xl font-bold text-indigo-600">
                           {{
@@ -286,7 +267,6 @@
                         <div class="text-xs text-gray-500">Quality</div>
                       </div>
 
-                      <!-- Difficulty Score (Auth Only) -->
                       <div v-if="isAuthenticated" class="text-center">
                         <div class="text-2xl font-bold text-green-600">
                           {{
@@ -298,7 +278,6 @@
                         <div class="text-xs text-gray-500">Difficulty</div>
                       </div>
 
-                      <!-- Login prompt for non-auth users -->
                       <div v-if="!isAuthenticated" class="text-center">
                         <router-link
                           to="/accounts/login/"
@@ -315,7 +294,6 @@
           </ul>
         </div>
 
-        <!-- Pagination -->
         <nav
           class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-6"
           aria-label="Pagination"
@@ -329,16 +307,16 @@
           </div>
           <div class="flex flex-1 justify-between sm:justify-end">
             <button
-              @click="changePage(pagination.current_page - 1)"
               :disabled="pagination.current_page <= 1"
               class="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="changePage(pagination.current_page - 1)"
             >
               Previous
             </button>
             <button
-              @click="changePage(pagination.current_page + 1)"
               :disabled="pagination.current_page >= pagination.total_pages"
               class="relative ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="changePage(pagination.current_page + 1)"
             >
               Next
             </button>
@@ -346,7 +324,6 @@
         </nav>
       </div>
 
-      <!-- No Results -->
       <div v-else class="text-center py-12">
         <div class="mx-auto h-12 w-12 text-gray-400">
           <AcademicCapIcon class="h-12 w-12" />
@@ -359,8 +336,8 @@
         </p>
         <div class="mt-6">
           <button
-            @click="resetFiltersAndSort"
             class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            @click="resetFiltersAndSort"
           >
             Clear all filters
           </button>
@@ -371,8 +348,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useAuth } from "../composables/useAuth";
+import { useCourses } from "../composables/useCourses";
 import {
   ExclamationTriangleIcon,
   AcademicCapIcon,
@@ -382,189 +361,69 @@ import {
 const route = useRoute();
 const router = useRouter();
 
-const courses = ref([]);
-const departments = ref([]);
-const loading = ref(false);
-const error = ref(null);
-const isAuthenticated = ref(false);
-const currentTerm = ref("Current"); // TODO: Maybe fetch current term?
-
-const pagination = reactive({
-  current_page: 1,
-  total_pages: 1,
-  total_courses: 0,
-  limit: 20, // Should match backend LIMITS['courses']
-});
-
-const filters = reactive({
-  department: "",
-  code: "",
-  min_quality: null,
-  min_difficulty: null, // Consider adding if needed
-});
-
-const sorting = reactive({
-  sort_by: "course_code",
-  sort_order: "asc",
-});
-
-// --- API Fetching ---
-
-const fetchDepartments = async () => {
-  try {
-    const response = await fetch("/api/departments/");
-    if (!response.ok) throw new Error("Failed to fetch departments");
-    departments.value = await response.json();
-  } catch (e) {
-    console.error("Error fetching departments:", e);
-    // Non-critical error, maybe show a message?
-  }
-};
-
-const fetchCourses = async () => {
-  loading.value = true;
-  error.value = null;
-
-  // Construct query parameters from reactive refs
-  const params = new URLSearchParams();
-  if (filters.department) params.append("department", filters.department);
-  if (filters.code) params.append("code", filters.code.trim());
-  if (filters.min_quality && isAuthenticated.value)
-    params.append("min_quality", filters.min_quality);
-  // if (filters.min_difficulty && isAuthenticated.value) params.append('min_difficulty', filters.min_difficulty);
-
-  params.append("sort_by", sorting.sort_by);
-  params.append("sort_order", sorting.sort_order);
-  params.append("page", pagination.current_page);
-
-  try {
-    const response = await fetch(`/api/courses/?${params.toString()}`);
-    if (!response.ok) {
-      const errorData = await response
-        .json()
-        .catch(() => ({ detail: "Unknown error" }));
-      throw new Error(
-        errorData.detail || `HTTP error! status: ${response.status}`,
-      );
-    }
-    const data = await response.json();
-    courses.value = data.courses;
-    pagination.current_page = data.pagination.current_page;
-    pagination.total_pages = data.pagination.total_pages;
-    pagination.total_courses = data.pagination.total_courses;
-    pagination.limit = data.pagination.limit;
-  } catch (e) {
-    console.error("Error fetching courses:", e);
-    error.value = e.message;
-    courses.value = []; // Clear courses on error
-  } finally {
-    loading.value = false;
-  }
-};
-
-const checkAuthentication = async () => {
-  try {
-    const response = await fetch("/api/user/status/");
-    if (response.ok) {
-      const data = await response.json();
-      isAuthenticated.value = data.isAuthenticated;
-      // Reset sort if user logs out and was sorting by auth-only field
-      if (
-        !isAuthenticated.value &&
-        (sorting.sort_by === "quality_score" ||
-          sorting.sort_by === "difficulty_score")
-      ) {
-        sorting.sort_by = "course_code";
-      }
-    } else {
-      isAuthenticated.value = false;
-    }
-  } catch (e) {
-    console.error("Error checking authentication:", e);
-    isAuthenticated.value = false;
-  }
-};
-
-// --- Event Handling & Logic ---
+const {
+  courses,
+  departments,
+  loading,
+  error,
+  pagination,
+  filters,
+  sorting,
+  fetchDepartments,
+  fetchCourses,
+  getQueryObject,
+  applyFiltersAndSort: applyFiltersAndSortFn,
+  resetFiltersAndSort: resetFiltersAndSortFn,
+  changePage: changePageFn,
+  syncStateFromQuery,
+} = useCourses();
+const { isAuthenticated, checkAuthentication } = useAuth();
+const currentTerm = ref("Current");
 
 const updateRoute = () => {
-  const query = {};
-  if (filters.department) query.department = filters.department;
-  if (filters.code) query.code = filters.code.trim();
-  if (filters.min_quality && isAuthenticated.value)
-    query.min_quality = filters.min_quality;
-  // if (filters.min_difficulty && isAuthenticated.value) query.min_difficulty = filters.min_difficulty;
-
-  if (sorting.sort_by !== "course_code" || sorting.sort_order !== "asc") {
-    query.sort_by = sorting.sort_by;
-    query.sort_order = sorting.sort_order;
-  }
-  if (pagination.current_page > 1) query.page = pagination.current_page;
-
+  const query = getQueryObject(isAuthenticated.value);
   router.push({ path: "/courses", query });
 };
 
+const applyFiltersAndSortLocal = () => {
+  applyFiltersAndSortFn();
+  updateRoute();
+};
+
 const applyFiltersAndSort = () => {
-  pagination.current_page = 1; // Reset to first page when filters change
+  applyFiltersAndSortLocal();
+};
+
+const resetFiltersAndSortLocal = () => {
+  resetFiltersAndSortFn();
   updateRoute();
 };
 
 const resetFiltersAndSort = () => {
-  filters.department = "";
-  filters.code = "";
-  filters.min_quality = null;
-  filters.min_difficulty = null;
-  sorting.sort_by = "course_code";
-  sorting.sort_order = "asc";
-  pagination.current_page = 1;
+  resetFiltersAndSortLocal();
+};
+
+const changePageLocal = (newPage) => {
+  changePageFn(newPage);
   updateRoute();
 };
 
 const changePage = (newPage) => {
-  if (newPage >= 1 && newPage <= pagination.total_pages) {
-    pagination.current_page = newPage;
-    updateRoute();
-  }
+  changePageLocal(newPage);
 };
-
-// --- Lifecycle and Watchers ---
 
 onMounted(async () => {
   await checkAuthentication();
   await fetchDepartments();
-  // Sync state from initial route query parameters
-  syncStateFromRoute(route.query);
-  await fetchCourses(); // Fetch initial data based on URL state
+  syncStateFromQuery(route.query);
+  await fetchCourses(isAuthenticated.value);
 });
 
-// Watch for route changes to re-fetch data
 watch(
   () => route.query,
   (newQuery) => {
-    syncStateFromRoute(newQuery);
-    fetchCourses();
+    syncStateFromQuery(newQuery);
+    fetchCourses(isAuthenticated.value);
   },
 );
-
-// Helper to update component state from URL query params
-const syncStateFromRoute = (query) => {
-  filters.department = query.department || "";
-  filters.code = query.code || "";
-  filters.min_quality = query.min_quality
-    ? parseInt(query.min_quality, 10)
-    : null;
-  // filters.min_difficulty = query.min_difficulty ? parseInt(query.min_difficulty, 10) : null;
-  sorting.sort_by = query.sort_by || "course_code";
-  sorting.sort_order = query.sort_order || "asc";
-  pagination.current_page = query.page ? parseInt(query.page, 10) : 1;
-
-  // Ensure sort_by is valid if user is not authenticated
-  if (
-    !isAuthenticated.value &&
-    (sorting.sort_by === "quality_score" ||
-      sorting.sort_by === "difficulty_score")
-  ) {
-    sorting.sort_by = "course_code"; // Default if auth changed
-  }
-};
 </script>

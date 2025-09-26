@@ -1,6 +1,5 @@
 <template>
   <div class="min-h-full">
-    <!-- Loading State -->
     <div v-if="loading" class="flex justify-center items-center min-h-96">
       <div
         class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-white bg-indigo-500"
@@ -29,7 +28,6 @@
       </div>
     </div>
 
-    <!-- Error State -->
     <div v-else-if="error" class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div class="rounded-md bg-red-50 p-4">
         <div class="flex">
@@ -47,9 +45,7 @@
       </div>
     </div>
 
-    <!-- Course Content -->
     <div v-else class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <!-- Course Header -->
       <div class="mb-8">
         <h1 class="text-3xl font-bold tracking-tight text-gray-900">
           {{ course.course_code }} | {{ course.course_title }}
@@ -78,11 +74,8 @@
         </p>
       </div>
 
-      <!-- Course Info Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        <!-- Left Column: Course Topics and Cross-listings -->
         <div class="lg:col-span-2 space-y-6">
-          <!-- Course Topics -->
           <div
             v-if="course.course_topics && course.course_topics.length > 0"
             class="bg-white overflow-hidden shadow sm:rounded-lg"
@@ -106,7 +99,6 @@
             </div>
           </div>
 
-          <!-- Cross-listed Courses -->
           <div
             v-if="course.xlist && course.xlist.length > 0"
             class="bg-white overflow-hidden shadow sm:rounded-lg"
@@ -129,9 +121,7 @@
           </div>
         </div>
 
-        <!-- Right Column: Voting Cards -->
         <div class="space-y-6">
-          <!-- Quality Score Card -->
           <div class="bg-white overflow-hidden shadow sm:rounded-lg">
             <div class="px-4 py-5 sm:p-6 text-center">
               <h3 class="text-lg font-medium text-gray-900 mb-4">
@@ -158,13 +148,13 @@
                     <button
                       v-for="star in 5"
                       :key="star"
-                      @click="vote(star, false)"
                       :class="[
                         'p-1 rounded transition-colors',
                         course.quality_vote && course.quality_vote.value >= star
                           ? 'text-yellow-500 hover:text-yellow-600'
                           : 'text-gray-300 hover:text-yellow-400',
                       ]"
+                      @click="vote(star, false)"
                     >
                       <svg class="h-6 w-6 fill-current" viewBox="0 0 24 24">
                         <path
@@ -200,7 +190,6 @@
             </div>
           </div>
 
-          <!-- Difficulty Score Card -->
           <div class="bg-white overflow-hidden shadow sm:rounded-lg">
             <div class="px-4 py-5 sm:p-6 text-center">
               <h3 class="text-lg font-medium text-gray-900 mb-4">
@@ -227,7 +216,6 @@
                     <button
                       v-for="star in 5"
                       :key="star"
-                      @click="vote(star, true)"
                       :class="[
                         'p-1 rounded transition-colors',
                         course.difficulty_vote &&
@@ -235,6 +223,7 @@
                           ? 'text-red-500 hover:text-red-600'
                           : 'text-gray-300 hover:text-red-400',
                       ]"
+                      @click="vote(star, true)"
                     >
                       <svg class="h-6 w-6 fill-current" viewBox="0 0 24 24">
                         <path
@@ -272,7 +261,6 @@
         </div>
       </div>
 
-      <!-- Instructors Section -->
       <div
         v-if="course.instructors && course.instructors.length > 0"
         class="mb-8"
@@ -296,7 +284,6 @@
         </div>
       </div>
 
-      <!-- Professors with Reviews -->
       <div v-if="course.professors_and_review_count" class="mb-8">
         <div class="bg-white overflow-hidden shadow sm:rounded-lg">
           <div class="px-4 py-5 sm:p-6">
@@ -329,7 +316,9 @@
                   >
                     <td class="px-6 py-4 whitespace-nowrap">
                       <router-link
-                        :to="`/course/${courseId}/review_search?q=${encodeURIComponent(item[0])}`"
+                        :to="`/course/${courseId}/review_search?q=${encodeURIComponent(
+                          item[0],
+                        )}`"
                         class="text-indigo-600 hover:text-indigo-900 font-medium"
                       >
                         {{ item[0] }}
@@ -352,7 +341,6 @@
         </div>
       </div>
 
-      <!-- Reviews Section -->
       <div
         v-if="
           isAuthenticated && course.review_set && course.review_set.length > 0
@@ -366,16 +354,16 @@
             </h3>
             <ReviewPagination
               :reviews="course.review_set"
-              :isAuthenticated="isAuthenticated"
+              :is-authenticated="isAuthenticated"
               :sanitize="sanitize"
-              :maxLines="5"
-              :pageSize="10"
-              @reviewUpdated="updateReviewData"
+              :max-lines="5"
+              :page-size="10"
+              @review-updated="updateReviewData"
             />
           </div>
         </div>
       </div>
-      <!-- Auth message for reviews -->
+
       <div v-else-if="course.review_count > 0" class="mb-8">
         <div class="rounded-md bg-blue-50 p-4">
           <div class="flex">
@@ -408,14 +396,26 @@
         </div>
       </div>
 
-      <!-- Write Review Section -->
       <div v-if="course.can_write_review" class="mb-8">
         <div class="bg-white overflow-hidden shadow sm:rounded-lg">
           <div class="px-4 py-5 sm:p-6">
             <h3 class="text-lg font-medium leading-6 text-gray-900 mb-6">
               Write a Review for {{ course.course_code }}
             </h3>
-            <form @submit.prevent="submitReview" class="space-y-6">
+            <form class="space-y-6" @submit.prevent="submitReview">
+              <div v-if="Object.keys(formErrors).length" class="mb-4">
+                <div class="rounded-md bg-red-50 p-3">
+                  <div class="text-sm text-red-700">
+                    Please fix the following errors:
+                  </div>
+                  <ul class="mt-2 list-disc list-inside text-sm text-red-600">
+                    <li v-for="(msgs, field) in formErrors" :key="field">
+                      <strong>{{ field }}:</strong>
+                      {{ Array.isArray(msgs) ? msgs[0] : msgs }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
               <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <label
@@ -425,13 +425,16 @@
                     Term
                   </label>
                   <input
-                    type="text"
                     id="term"
                     v-model="newReview.term"
+                    type="text"
                     required
                     :placeholder="currentTerm"
                     class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   />
+                  <p v-if="formErrors.term" class="mt-1 text-sm text-red-600">
+                    {{ formErrors.term[0] }}
+                  </p>
                 </div>
                 <div>
                   <label
@@ -441,18 +444,25 @@
                     Professor
                   </label>
                   <input
-                    type="text"
                     id="professor"
                     v-model="newReview.professor"
+                    type="text"
                     required
                     placeholder="Full name, e.g., John Smith"
                     class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   />
+                  <p
+                    v-if="formErrors.professor"
+                    class="mt-1 text-sm text-red-600"
+                  >
+                    {{ formErrors.professor[0] }}
+                  </p>
                 </div>
               </div>
               <div>
                 <label
                   id="review-comments-label"
+                  for="review-comments"
                   class="block text-sm font-medium leading-6 text-gray-900"
                 >
                   Review
@@ -481,11 +491,14 @@
                     'preview',
                     'htmlPreview',
                   ]"
-                  previewTheme="github"
+                  preview-theme="github"
                   tabindex="0"
                   style="height: 300px"
                   class="mt-1 block w-full rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 markdown-content"
                 />
+                <p v-if="formErrors.comments" class="mt-1 text-sm text-red-600">
+                  {{ formErrors.comments[0] }}
+                </p>
               </div>
               <div class="flex justify-end">
                 <button
@@ -500,27 +513,24 @@
         </div>
       </div>
 
-      <!-- Review Status Message / User's Review Display -->
       <div v-else class="mb-8">
         <div class="rounded-md bg-gray-50 p-4">
-          <!-- Show user's review if they have written one -->
           <div
             v-if="isAuthenticated && !course.can_write_review && userReview"
             class="bg-indigo-50 overflow-hidden shadow rounded-lg ring-1 ring-indigo-200"
           >
             <div class="px-4 py-5 sm:px-6 bg-indigo-100">
               <div class="flex items-center justify-between">
-                <h3 class="text-lg font-medium text-indigo-900">Your Review</h3>
+                <h3 class="text-lg text-indigo-900">Your Review</h3>
                 <button
-                  @click="deleteReview"
                   class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+                  @click="deleteReview"
                 >
                   Delete Review
                 </button>
               </div>
             </div>
             <div class="px-4 py-5 sm:p-6">
-              <!-- Review metadata -->
               <div class="text-sm text-indigo-700 font-medium mb-4">
                 <span v-if="userReview.term">{{ userReview.term }}</span>
                 <span v-if="userReview.professor && userReview.term">
@@ -531,20 +541,18 @@
                 }}</span>
               </div>
 
-              <!-- Review content with truncation -->
               <div class="bg-white rounded-2xl p-4 border border-indigo-200">
                 <MdPreview
                   :model-value="truncatedUserReviewContent"
                   :sanitize="sanitize"
-                  previewTheme="github"
+                  preview-theme="github"
                   class="text-sm text-gray-700 markdown-content"
                 />
 
-                <!-- Expand/Collapse button for long reviews -->
                 <div v-if="reviewNeedsTruncation" class="mt-3 text-center">
                   <button
-                    @click="userReviewExpanded = !userReviewExpanded"
                     class="inline-flex items-center px-3 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-800 focus:outline-none"
+                    @click="userReviewExpanded = !userReviewExpanded"
                   >
                     {{ userReviewExpanded ? "Show Less" : "Read More" }}
                     <svg
@@ -569,7 +577,6 @@
             </div>
           </div>
 
-          <!-- Fallback messages for users without reviews -->
           <div v-else class="text-center flex items-center justify-between">
             <p v-if="isAuthenticated" class="text-sm text-gray-600 flex-1">
               Thanks for writing a review of this course!
@@ -585,8 +592,8 @@
             </p>
             <button
               v-if="isAuthenticated && !course.can_write_review && !userReview"
-              @click="deleteReview"
               class="ml-4 inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+              @click="deleteReview"
             >
               Delete Review
             </button>
@@ -603,18 +610,16 @@ import { useRoute, useRouter } from "vue-router";
 import {
   ExclamationTriangleIcon,
   CheckIcon,
-  ChevronUpIcon,
-  ChevronDownIcon,
   LockClosedIcon,
   UsersIcon,
   InformationCircleIcon,
-  HandThumbUpIcon,
-  HandThumbDownIcon,
 } from "@heroicons/vue/24/outline";
 import { MdEditor, MdPreview } from "md-editor-v3";
 import "md-editor-v3/lib/style.css";
-import DOMPurify from "dompurify";
-import ReviewPagination from "./ReviewPagination.vue";
+import { sanitize } from "../utils/sanitize";
+import { useAuth } from "../composables/useAuth";
+import { useReviews } from "../composables/useReviews";
+import ReviewPagination from "../components/ReviewPagination.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -622,7 +627,13 @@ const course = ref(null);
 const loading = ref(true);
 const error = ref(null);
 const currentTerm = "25S";
-const isAuthenticated = ref(false);
+const { isAuthenticated, checkAuthentication } = useAuth();
+const {
+  fetchUserReview: fetchUserReviewFn,
+  submitReview: submitReviewFn,
+  deleteReview: deleteReviewFn,
+  vote: voteFn,
+} = useReviews();
 const userReview = ref(null);
 const userReviewExpanded = ref(false);
 const newReview = ref({
@@ -630,9 +641,10 @@ const newReview = ref({
   professor: "",
   comments: "",
 });
+const formErrors = ref({});
 
 const courseId = computed(() => {
-  return route.params.course_id;
+  return route.params.courseId;
 });
 
 const truncatedUserReviewContent = computed(() => {
@@ -659,8 +671,6 @@ onMounted(async () => {
   }
   await checkAuthentication();
 
-  // Only fetch user review if authenticated and they are NOT able to write a review
-  // (can_write_review === false means they already have a review)
   if (isAuthenticated.value && course.value && !course.value.can_write_review) {
     await fetchUserReview();
   }
@@ -682,37 +692,14 @@ const fetchCourse = async () => {
   }
 };
 
-const checkAuthentication = async () => {
-  try {
-    const response = await fetch("/api/user/status/");
-    if (response.ok) {
-      const data = await response.json();
-      isAuthenticated.value = data.isAuthenticated;
-    } else {
-      isAuthenticated.value = false;
-    }
-  } catch (e) {
-    console.error("Error checking authentication:", e);
-    isAuthenticated.value = false;
-  }
-};
 const fetchUserReview = async () => {
   if (!isAuthenticated.value || !courseId.value) return;
-
   try {
-    const response = await fetch(`/api/course/${courseId.value}/my-review/`);
-    if (response.ok) {
-      const data = await response.json();
-      // Handle case where API might return a list - take first one
-      userReview.value = Array.isArray(data) ? data[0] : data;
-    } else if (response.status === 404) {
-      // User hasn't written a review yet - this is expected
-      userReview.value = null;
-    } else {
-      console.error("Error fetching user review:", response.status);
-    }
+    const data = await fetchUserReviewFn(courseId.value);
+    userReview.value = data ?? null;
   } catch (e) {
     console.error("Error fetching user review:", e);
+    userReview.value = null;
   }
 };
 
@@ -724,88 +711,23 @@ const vote = async (value, forLayup) => {
     return;
   }
   try {
-    const postData = { value, forLayup };
-    const response = await fetch(`/api/course/${courseId.value}/vote`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: JSON.stringify(postData),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
+    const data = await voteFn(courseId.value, value, forLayup);
+    if (!data) return;
     if (forLayup) {
       course.value.difficulty_score = data.new_score;
-      if (data.was_unvote) {
-        course.value.difficulty_vote = null;
-      } else {
-        course.value.difficulty_vote = {
-          value: value,
-        };
-      }
+      course.value.difficulty_vote = data.was_unvote ? null : { value };
       if (typeof data.new_vote_count !== "undefined") {
         course.value.difficulty_vote_count = data.new_vote_count;
       }
     } else {
       course.value.quality_score = data.new_score;
-      if (data.was_unvote) {
-        course.value.quality_vote = null;
-      } else {
-        course.value.quality_vote = {
-          value: value,
-        };
-      }
+      course.value.quality_vote = data.was_unvote ? null : { value };
       if (typeof data.new_vote_count !== "undefined") {
         course.value.quality_vote_count = data.new_vote_count;
       }
     }
-    // Update new_vote_count if present in response
   } catch (e) {
     console.error("Error voting:", e);
-  }
-};
-
-const voteOnReview = async (reviewId, isKudos) => {
-  if (!isAuthenticated.value) {
-    if (confirm("Please login to vote on reviews!")) {
-      router.push("/accounts/login");
-    }
-    return;
-  }
-
-  try {
-    const response = await fetch(`/api/review/${reviewId}/vote/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: JSON.stringify({ is_kudos: isKudos }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    // Update the review in the course data
-    const reviewIndex = course.value.review_set.findIndex(
-      (r) => r.id === reviewId,
-    );
-    if (reviewIndex !== -1) {
-      course.value.review_set[reviewIndex].kudos_count = data.kudos_count;
-      course.value.review_set[reviewIndex].dislike_count = data.dislike_count;
-      course.value.review_set[reviewIndex].user_vote = data.user_vote;
-    }
-  } catch (e) {
-    console.error("Error voting on review:", e);
-    alert("Error voting on review. Please try again.");
   }
 };
 
@@ -821,96 +743,52 @@ const updateReviewData = (updateData) => {
   }
 };
 
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    const cookies = document.cookie.split(";");
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === name + "=") {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
+const validateReview = () => {
+  const errs = {};
+  if (!newReview.value.term || newReview.value.term.length !== 3) {
+    errs.term = ["Please provide a valid term, e.g. 24F"];
   }
-  return cookieValue;
-}
-// Sanitize function using DOMPurify with enhanced security configuration
-const sanitize = (html) =>
-  DOMPurify.sanitize(html, {
-    FORBID_TAGS: ["img", "svg", "math", "script", "iframe"],
-    FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onmouseout"],
-    USE_PROFILES: { html: true }, // Only allow HTML, no SVG or MathML
-    SAFE_FOR_TEMPLATES: true, // Protect against template injection
-    SANITIZE_DOM: true, // Protect against DOM clobbering
-    KEEP_CONTENT: false, // Remove content of forbidden tags
-  });
+  if (
+    !newReview.value.professor ||
+    newReview.value.professor.trim().split(/\s+/).length < 2
+  ) {
+    errs.professor = [
+      "Please provide the professor's full name, e.g. John Smith",
+    ];
+  }
+  if (!newReview.value.comments || newReview.value.comments.length < 30) {
+    errs.comments = ["Please write a longer review (at least 30 characters)"];
+  }
+  formErrors.value = errs;
+  return Object.keys(errs).length === 0;
+};
 
 const submitReview = async () => {
+  formErrors.value = {};
   if (!isAuthenticated.value) {
     alert("You must be logged in to submit a review.");
     return;
   }
+
+  if (!validateReview()) {
+    return;
+  }
+
   try {
-    const response = await fetch(`/api/course/${courseId.value}/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: JSON.stringify(newReview.value),
-    });
-    if (!response.ok) {
-      let errorMessage = `HTTP error! status: ${response.status}`;
-      try {
-        const errorData = await response.json();
-        // Handle Django REST Framework serializer errors (which are objects with field arrays)
-        if (
-          errorData &&
-          typeof errorData === "object" &&
-          !Array.isArray(errorData)
-        ) {
-          const errorLines = [];
-          for (const [field, messages] of Object.entries(errorData)) {
-            if (Array.isArray(messages) && messages.length > 0) {
-              // Join multiple messages for a single field with a space
-              errorLines.push(`${field}: ${messages.join(" ")}`);
-            } else if (typeof messages === "string") {
-              errorLines.push(`${field}: ${messages}`);
-            }
-          }
-          if (errorLines.length > 0) {
-            errorMessage = errorLines.join("\n"); // Join fields with a newline
-          } else {
-            // Fallback if structure is not as expected
-            errorMessage = JSON.stringify(errorData);
-          }
-        } else if (errorData.detail) {
-          // Handle generic DRF error responses
-          errorMessage = errorData.detail;
-        } else if (typeof errorData === "string") {
-          errorMessage = errorData;
-        } else {
-          // Fallback for other object types or arrays
-          errorMessage = JSON.stringify(errorData);
-        }
-      } catch (e) {
-        // If parsing JSON fails, use the status text
-        errorMessage = response.statusText || errorMessage;
-      }
-      throw new Error(errorMessage);
+    const updatedCourse = await submitReviewFn(courseId.value, newReview.value);
+    if (updatedCourse) {
+      course.value = updatedCourse;
+      newReview.value = { term: "", professor: "", comments: "" };
+      await fetchUserReview();
+      alert("Review submitted successfully!");
     }
-    course.value = await response.json();
-    newReview.value = { term: "", professor: "", comments: "" };
-
-    // Refresh user review after successful submission
-    await fetchUserReview();
-
-    alert("Review submitted successfully!");
   } catch (error) {
     console.error("Error submitting review:", error);
-    // Use alert with newline characters preserved
-    alert(`Error submitting review:\n${error.message}`);
+    if (error && error.errors && typeof error.errors === "object") {
+      formErrors.value = error.errors;
+    } else {
+      alert(`Error submitting review:\n${error.message}`);
+    }
   }
 };
 
@@ -927,27 +805,12 @@ const deleteReview = async () => {
   }
 
   try {
-    const response = await fetch(`/api/course/${courseId.value}/review/`, {
-      method: "DELETE",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(
-        `HTTP error! status: ${response.status}, detail: ${JSON.stringify(errorData)}`,
-      );
+    const updatedCourse = await deleteReviewFn(courseId.value);
+    if (updatedCourse) {
+      course.value = updatedCourse;
+      userReview.value = null;
+      alert("Review deleted successfully!");
     }
-
-    // Refresh the course data to reflect the deletion
-    course.value = await response.json();
-
-    // Clear user review after successful deletion
-    userReview.value = null;
-
-    alert("Review deleted successfully!");
   } catch (error) {
     console.error("Error deleting review:", error);
     alert(`Error deleting review: ${error.message}`);
