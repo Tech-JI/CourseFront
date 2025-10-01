@@ -44,6 +44,10 @@ export function useAuth() {
     checkAuthentication();
   };
 
+  const notifyAuthStateChanged = () => {
+    window.dispatchEvent(new CustomEvent("auth-state-changed"));
+  };
+
   onMounted(() => {
     checkAuthentication();
     window.addEventListener("auth-state-changed", onAuthStateChanged);
@@ -57,6 +61,7 @@ export function useAuth() {
     isAuthenticated,
     checkAuthentication,
     logout,
+    notifyAuthStateChanged,
   };
 }
 
