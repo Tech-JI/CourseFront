@@ -1,123 +1,178 @@
-/**
- * Authentication utilities - centralized auth state management
- */
+import { getCookie } from "./cookies";
+
+const OTP_STORAGE_KEY = "auth_otp";
+const FLOW_STATE_STORAGE_KEY = "auth_flow";
 
 /**
- * Get authentication state from various storage sources
- * @returns {Object|null} Auth state object or null if not found
+ * Initiates the authentication flow.
+ * @param {string} action - The authentication action (signup, login, reset_password).
+ * @param {string} turnstileToken - The Cloudflare Turnstile token.
+ * @returns {Promise<{otp: string, redirectUrl: string}>}
  */
-export function getAuthState() {
-  try {
-    // Check URL parameters first (highest priority)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (
-      urlParams.get("verified") === "true" &&
-      urlParams.get("from_callback") === "true"
-    ) {
-      const urlAuthState = {
-        status: "verified",
-        action: urlParams.get("action"),
-        account: urlParams.get("account"),
-        expires_at: urlParams.get("expires_at"),
-        verified_at: new Date().toISOString(),
-        source: "url_params",
-      };
-      return urlAuthState;
-    }
+export async function initiateAuth(action, turnstileToken) {
+  const response = await fetch("/api/auth/initiate/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({
+      action: action,
+      turnstile_token: turnstileToken,
+    }),
+  });
 
-    // Check for simple verified state in URL
-    if (urlParams.has("verified") && urlParams.get("verified") === "true") {
-      const account = urlParams.get("account");
-      const action = urlParams.get("action");
-      const expires_at = urlParams.get("expires_at");
-
-      if (account && action) {
-        return {
-          status: "verified",
-          action: action,
-          account: account,
-          expires_at: expires_at,
-          source: "url",
-        };
-      }
-    }
-
-    // Check localStorage
-    const localStorageState = localStorage.getItem("auth_flow");
-    if (localStorageState) {
-      const parsed = JSON.parse(localStorageState);
-      return { ...parsed, source: "localStorage" };
-    }
-
-    // Check sessionStorage
-    const sessionStorageState = sessionStorage.getItem("auth_flow");
-    if (sessionStorageState) {
-      const parsed = JSON.parse(sessionStorageState);
-      return { ...parsed, source: "sessionStorage" };
-    }
-
-    // Check backup sessionStorage location
-    const backupSessionState = sessionStorage.getItem("auth_verification_data");
-    if (backupSessionState) {
-      const parsed = JSON.parse(backupSessionState);
-      return { ...parsed, source: "sessionStorage_backup" };
-    }
-
-    return null;
-  } catch (error) {
-    console.error("Error reading auth state:", error);
-    return null;
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to initiate auth flow.");
   }
-}
 
-/**
- * Clear all authentication state from storage
- */
-export function clearAuthState() {
-  try {
-    localStorage.removeItem("auth_flow");
-    localStorage.removeItem("auth_otp");
-    localStorage.removeItem("auth_redirect_time");
-    localStorage.removeItem("authState");
-    sessionStorage.removeItem("auth_flow");
-    sessionStorage.removeItem("auth_verification_data");
-  } catch (error) {
-    console.error("Failed to clear auth state:", error);
-  }
-}
+  const data = await response.json();
+  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-/**
- * Save authentication state to storage
- * @param {Object} state - Auth state to save
- * @param {boolean} persistent - Whether to save to localStorage (true) or sessionStorage (false)
- */
-export function saveAuthState(state, persistent = true) {
-  try {
-    const stateToSave = { ...state };
-    delete stateToSave.source; // Remove source field before saving
-
-    const stateString = JSON.stringify(stateToSave);
-
-    if (persistent) {
-      localStorage.setItem("auth_flow", stateString);
-    }
-    sessionStorage.setItem("auth_flow", stateString);
-  } catch (error) {
-    console.error("Failed to save auth state:", error);
-  }
-}
-
-/**
- * Check if current auth state is valid for given action
- * @param {string} action - The action to validate against
- * @returns {boolean} Whether the current state is valid
- */
-export function isAuthStateValid(action) {
-  const state = getAuthState();
-  return (
-    state &&
-    state.action === action &&
-    state.status === "verified" &&
-    (!state.expires_at || Date.now() < parseInt(state.expires_at))
+  localStorage.setItem(
+    OTP_STORAGE_KEY,
+    JSON.stringify({ otp: data.otp, expires_at: expiresAt }),
   );
+  localStorage.setItem(
+    FLOW_STATE_STORAGE_KEY,
+    JSON.stringify({ status: "pending", expires_at: expiresAt }),
+  );
+
+  return { otp: data.otp, redirectUrl: data.redirect_url };
+}
+
+/**
+ * Verifies the authentication callback.
+ * @param {string} action - The authentication action.
+ * @param {string} account - The user's account identifier.
+ * @param {string} answerId - The questionnaire answer ID.
+ * @returns {Promise<any>}
+ */
+export async function verifyCallback(action, account, answerId) {
+  const response = await fetch("/api/auth/verify/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({
+      action,
+      account,
+      answer_id: answerId,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to verify authentication.");
+  }
+
+  const data = await response.json();
+  localStorage.setItem(
+    FLOW_STATE_STORAGE_KEY,
+    JSON.stringify({
+      status: "verified",
+      action: data.action,
+      expires_at: data.expires_at * 1000,
+    }),
+  );
+
+  return data;
+}
+
+/**
+ * Sets or resets the user's password.
+ * @param {string} action - The action being performed (signup or reset_password).
+ * @param {string} password - The new password.
+ * @returns {Promise<any>}
+ */
+export async function setPassword(action, password) {
+  const url = action === "signup" ? "/api/auth/signup/" : "/api/auth/password/";
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({ password }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to set password.");
+  }
+
+  clearAuthFlowState();
+  return await response.json();
+}
+
+/**
+ * Logs in a user with username and password.
+ * @param {string} account
+ * @param {string} password
+ * @param {string} turnstileToken
+ * @returns {Promise<any>}
+ */
+export async function loginWithPassword(account, password, turnstileToken) {
+  const response = await fetch("/api/auth/login/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({
+      account,
+      password,
+      turnstile_token: turnstileToken,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Login failed.");
+  }
+  return await response.json();
+}
+
+/**
+ * Retrieves the current OTP state from localStorage.
+ * @returns {{otp: string, expires_at: number} | null}
+ */
+export function getOtpState() {
+  const otpState = localStorage.getItem(OTP_STORAGE_KEY);
+  if (!otpState) return null;
+
+  const parsed = JSON.parse(otpState);
+  if (parsed.expires_at < Date.now()) {
+    localStorage.removeItem(OTP_STORAGE_KEY);
+    return null;
+  }
+
+  return parsed;
+}
+
+/**
+ * Retrieves the current auth flow state from localStorage.
+ * @returns {{status: string, action: string, expires_at: number} | null}
+ */
+export function getAuthFlowState() {
+  const flowState = localStorage.getItem(FLOW_STATE_STORAGE_KEY);
+  if (!flowState) return null;
+
+  const parsed = JSON.parse(flowState);
+  if (parsed.expires_at < Date.now()) {
+    localStorage.removeItem(FLOW_STATE_STORAGE_KEY);
+    return null;
+  }
+
+  return parsed;
+}
+
+/**
+ * Clears all auth flow related state from localStorage.
+ */
+export function clearAuthFlowState() {
+  localStorage.removeItem(OTP_STORAGE_KEY);
+  localStorage.removeItem(FLOW_STATE_STORAGE_KEY);
 }
