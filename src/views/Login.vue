@@ -1,164 +1,178 @@
 <template>
   <div
-    class="flex min-h-full flex-1 flex-col justify-center py-12 sm:px-6 lg:px-8"
+    class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
   >
-    <div class="sm:mx-auto sm:w-full sm:max-w-md">
-      <div class="text-center">
+    <div class="max-w-md w-full space-y-8">
+      <div>
         <h2
-          class="mt-6 text-center text-2xl/9 font-bold tracking-tight text-gray-900"
+          class="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900"
         >
           Sign in to your account
         </h2>
-        <p class="mt-2 text-sm text-gray-600">
-          Access your JI Course Review dashboard
+        <p class="mt-2 text-center text-sm text-gray-600">
+          Or
+          <router-link
+            to="/signup"
+            class="font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            create a new account
+          </router-link>
         </p>
       </div>
-    </div>
 
-    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
-      <div class="bg-white px-6 py-12 shadow-sm sm:rounded-lg sm:px-12">
-        <div class="mb-8">
-          <nav class="flex space-x-8" aria-label="Tabs">
+      <div class="mt-8 bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <!-- Tab Navigation -->
+        <div class="border-b border-gray-200 mb-6">
+          <nav class="-mb-px flex space-x-8" aria-label="Tabs">
             <button
-              type="button"
               :class="[
-                'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors',
-                !showQuestionnaireLogin
+                activeTab === 'password'
                   ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                  : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+                'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors',
               ]"
-              @click="showQuestionnaireLogin = false"
+              @click="activeTab = 'password'"
             >
-              Password Login
+              Password
             </button>
             <button
-              type="button"
               :class="[
-                'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors',
-                showQuestionnaireLogin
+                activeTab === 'questionnaire'
                   ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                  : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+                'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors',
               ]"
-              @click="showQuestionnaireLogin = true"
+              @click="activeTab = 'questionnaire'"
             >
-              SJTU Authentication
+              Questionnaire
             </button>
           </nav>
         </div>
 
-        <div v-if="error" class="rounded-md bg-red-50 p-4 mb-6">
-          <div class="flex">
-            <ExclamationTriangleIcon
-              class="h-5 w-5 text-red-400 shrink-0"
-              aria-hidden="true"
-            />
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-red-800">Login failed</h3>
-              <div class="mt-2 text-sm text-red-700">{{ error }}</div>
-            </div>
-          </div>
-        </div>
-
+        <!-- Password Login Form -->
         <form
-          v-if="!showQuestionnaireLogin"
+          v-if="activeTab === 'password'"
           class="space-y-6"
-          @submit.prevent="handleLogin"
+          @submit.prevent="handlePasswordLogin"
         >
           <div>
             <label
-              for="email"
-              class="block text-sm/6 font-medium text-gray-900"
+              for="account"
+              class="block text-sm font-medium leading-6 text-gray-900"
             >
-              Email address
+              Account
             </label>
             <div class="mt-2">
               <input
-                id="email"
-                v-model="email"
-                name="email"
-                type="email"
-                autocomplete="email"
+                id="account"
+                v-model="account"
+                type="text"
+                autocomplete="username"
                 required
-                placeholder="Enter your SJTU email"
-                class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
               />
             </div>
           </div>
 
           <div>
-            <div class="flex items-center justify-between">
-              <label
-                for="password"
-                class="block text-sm/6 font-medium text-gray-900"
-              >
-                Password
-              </label>
-              <div class="text-sm">
-                <router-link
-                  to="/accounts/reset"
-                  class="font-semibold text-indigo-600 hover:text-indigo-500"
-                >
-                  Forgot password?
-                </router-link>
-              </div>
-            </div>
+            <label
+              for="password"
+              class="block text-sm font-medium leading-6 text-gray-900"
+            >
+              Password
+            </label>
             <div class="mt-2">
               <input
                 id="password"
-                v-model="password"
-                name="password"
+                v-model="passwordInput"
                 type="password"
                 autocomplete="current-password"
                 required
-                placeholder="Enter your password"
-                class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
               />
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end">
+            <div class="text-sm">
+              <router-link
+                to="/reset"
+                class="font-medium text-indigo-600 hover:text-indigo-500"
+              >
+                Forgot your password?
+              </router-link>
             </div>
           </div>
 
           <div>
             <Turnstile
-              v-if="!showQuestionnaireLogin"
-              key="login-password-turnstile"
-              :show-title="false"
-              theme="light"
-              size="normal"
-              @token="onTurnstileToken"
-              @error="onTurnstileError"
-              @expired="onTurnstileExpired"
+              v-if="showPasswordTurnstile"
+              ref="passwordTurnstileRef"
+              :sitekey="turnstileSiteKey"
+              @verify="onPasswordTurnstileVerified"
+              @expire="onPasswordTurnstileExpired"
+              @error="onPasswordTurnstileError"
             />
           </div>
 
           <div>
             <button
               type="submit"
-              :disabled="loading || !turnstileToken"
-              class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-2 focus:outline-offset-2 focus:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="!passwordTurnstileToken || isPasswordLoading"
+              class="w-full flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <Icon
-                v-if="loading"
-                name="loading"
-                class="-ml-1 mr-3 h-5 w-5 text-white"
-              />
-              {{ loading ? "Signing in..." : "Sign in" }}
+              <span v-if="!isPasswordLoading">Sign in</span>
+              <span v-else class="flex items-center">
+                <svg
+                  class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Signing in...
+              </span>
             </button>
+          </div>
+
+          <div v-if="passwordError" class="rounded-md bg-red-50 p-4">
+            <div class="flex">
+              <ExclamationTriangleIcon
+                class="h-5 w-5 text-red-400"
+                aria-hidden="true"
+              />
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">Error</h3>
+                <div class="mt-1 text-sm text-red-700">{{ passwordError }}</div>
+              </div>
+            </div>
           </div>
         </form>
 
-        <div v-else>
+        <!-- Questionnaire Login -->
+        <div v-else-if="activeTab === 'questionnaire'">
+          <div class="mb-4">
+            <p class="text-sm text-gray-600">
+              Sign in using your university credentials via the questionnaire
+              system.
+            </p>
+          </div>
           <AuthInitiate action="login" />
         </div>
       </div>
-
-      <p class="mt-10 text-center text-sm/6 text-gray-500">
-        Don't have an account?
-        <router-link
-          to="/accounts/signup"
-          class="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
-        >
-          Sign up here
-        </router-link>
-      </p>
     </div>
   </div>
 </template>
@@ -166,82 +180,74 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { useAuth } from "../composables/useAuth";
-import { getCookie } from "../utils/cookies";
-import { ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
+import { loginWithPassword, clearAuthFlowState } from "../utils/auth";
 import AuthInitiate from "../components/AuthInitiate.vue";
 import Turnstile from "../components/Turnstile.vue";
-import Icon from "../components/Icon.vue";
+import { ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
+import { useAuth } from "../composables/useAuth";
 
 const router = useRouter();
-const { isAuthenticated } = useAuth();
-const email = ref("");
-const password = ref("");
-const error = ref("");
-const loading = ref(false);
-const showQuestionnaireLogin = ref(false);
-const turnstileToken = ref(null);
+const { isAuthenticated, checkAuthentication } = useAuth();
 
-const onTurnstileToken = (token) => {
-  turnstileToken.value = token;
-};
-
-const onTurnstileError = (errorMessage) => {
-  error.value = errorMessage;
-};
-
-const onTurnstileExpired = (errorMessage) => {
-  turnstileToken.value = null;
-  error.value = errorMessage;
-};
+const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+const activeTab = ref("password");
+const account = ref("");
+const passwordInput = ref("");
+const passwordError = ref(null);
+const isPasswordLoading = ref(false);
+const showPasswordTurnstile = ref(true);
+const passwordTurnstileToken = ref(null);
+const passwordTurnstileRef = ref(null);
 
 onMounted(async () => {
+  await checkAuthentication();
+
   if (isAuthenticated.value) {
     router.push("/");
-  }
-});
-
-const handleLogin = async () => {
-  error.value = "";
-
-  if (!turnstileToken.value) {
-    error.value = "Please complete the security verification first.";
     return;
   }
 
-  loading.value = true;
+  clearAuthFlowState();
+});
+
+const onPasswordTurnstileVerified = (token) => {
+  passwordTurnstileToken.value = token;
+  passwordError.value = null;
+};
+
+const onPasswordTurnstileExpired = () => {
+  passwordTurnstileToken.value = null;
+  passwordError.value = "Security verification expired. Please try again.";
+};
+
+const onPasswordTurnstileError = () => {
+  passwordTurnstileToken.value = null;
+  passwordError.value =
+    "Security verification failed. Please refresh and try again.";
+};
+
+const handlePasswordLogin = async () => {
+  if (!passwordTurnstileToken.value) {
+    passwordError.value = "Please complete the security verification.";
+    return;
+  }
+
+  passwordError.value = null;
+  isPasswordLoading.value = true;
 
   try {
-    const response = await fetch("/api/auth/login/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: JSON.stringify({
-        account: email.value,
-        password: password.value,
-        turnstile_token: turnstileToken.value,
-      }),
-    });
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.error || "Login failed");
-    }
-
-    const data = await response.json();
-
-    try {
-      window.dispatchEvent(new CustomEvent("auth-state-changed"));
-    } catch (e) {
-      console.warn("Could not dispatch auth-state-changed event:", e);
-    }
-    router.replace("/");
-  } catch (err) {
-    error.value = err.message;
+    await loginWithPassword(
+      account.value,
+      passwordInput.value,
+      passwordTurnstileToken.value,
+    );
+    router.push("/");
+  } catch (e) {
+    passwordError.value = e.message;
+    passwordTurnstileRef.value?.reset();
+    passwordTurnstileToken.value = null;
   } finally {
-    loading.value = false;
+    isPasswordLoading.value = false;
   }
 };
 </script>
