@@ -1,394 +1,240 @@
 <template>
-  <div class="bg-white py-8 px-4 shadow-sm sm:rounded-lg sm:px-10">
+  <div class="space-y-6">
     <form class="space-y-6" @submit.prevent="handleSubmit">
+      <!-- Password Field -->
       <div>
-        <h3 class="text-lg/7 font-semibold text-gray-900 text-center">
-          {{ formTitle }}
-        </h3>
-        <p class="mt-1 text-sm/6 text-gray-600 text-center">
-          {{ formDescription }}
-        </p>
-      </div>
-
-      <div>
-        <label for="password" class="block text-sm/6 font-medium text-gray-900">
-          {{ action === "reset_password" ? "New Password" : "Password" }}
+        <label
+          for="password"
+          class="block text-sm font-medium leading-6 text-gray-900"
+        >
+          Password
         </label>
-        <div class="mt-2 relative">
+        <div class="mt-2">
           <input
             id="password"
-            v-model="formData.password"
-            :type="showPassword ? 'text' : 'password'"
+            v-model="password"
+            type="password"
+            autocomplete="new-password"
             required
-            minlength="8"
-            maxlength="128"
-            class="block w-full rounded-md bg-white px-3 py-1.5 pr-10 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
             :class="{
-              'outline-red-300 focus:outline-red-600': errors.password,
+              'ring-red-500 focus:ring-red-500':
+                passwordErrors.length > 0 && password,
             }"
-            placeholder="Enter password (at least 12 characters)"
-            :disabled="isLoading"
-            @input="validatePassword"
+            @input="validatePasswordInput"
           />
-          <button
-            type="button"
-            class="absolute inset-y-0 right-0 pr-3 flex items-center"
-            :disabled="isLoading"
-            @click="showPassword = !showPassword"
-          >
-            <Icon
-              :name="showPassword ? 'eye-closed' : 'eye-open'"
-              class="text-gray-400"
-            />
-          </button>
         </div>
-        <p v-if="errors.password" class="mt-2 text-sm/6 text-red-600">
-          {{ errors.password }}
-        </p>
 
-        <div v-if="formData.password" class="mt-2">
-          <div class="flex justify-between items-center mb-1">
-            <span class="text-xs/5 text-gray-600">Password Strength</span>
-            <span class="text-xs/5" :class="passwordStrengthColor">{{
-              passwordStrengthText
-            }}</span>
+        <!-- Password Strength Indicator -->
+        <div v-if="password" class="mt-2">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-medium" :class="strengthColor">
+              {{ strengthText }}
+            </span>
+            <span class="text-xs text-gray-500">
+              {{ password.length }}/32 characters
+            </span>
           </div>
           <div class="w-full bg-gray-200 rounded-full h-1.5">
             <div
               class="h-1.5 rounded-full transition-all duration-300"
-              :class="passwordStrengthColor"
-              :style="{ width: passwordStrengthPercentage + '%' }"
+              :class="strengthColor"
+              :style="{ width: `${strengthPercentage}%` }"
             ></div>
           </div>
         </div>
+
+        <!-- Password Requirements -->
+        <div v-if="password" class="mt-2 space-y-1">
+          <p
+            v-for="error in passwordErrors"
+            :key="error"
+            class="text-xs text-red-600"
+          >
+            {{ error }}
+          </p>
+        </div>
       </div>
 
+      <!-- Confirm Password Field -->
       <div>
         <label
-          for="confirm-password"
-          class="block text-sm/6 font-medium text-gray-900"
+          for="confirmPassword"
+          class="block text-sm font-medium leading-6 text-gray-900"
         >
           Confirm Password
         </label>
-        <div class="mt-2 relative">
+        <div class="mt-2">
           <input
-            id="confirm-password"
-            v-model="formData.confirmPassword"
-            :type="showConfirmPassword ? 'text' : 'password'"
+            id="confirmPassword"
+            v-model="confirmPassword"
+            type="password"
+            autocomplete="new-password"
             required
-            maxlength="128"
-            class="block w-full rounded-md bg-white px-3 py-1.5 pr-10 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
             :class="{
-              'outline-red-300 focus:outline-red-600': errors.confirmPassword,
+              'ring-red-500 focus:ring-red-500':
+                confirmPasswordErrors.length > 0 && confirmPassword,
             }"
-            placeholder="Enter password again"
-            :disabled="isLoading"
-            @input="validateConfirmPassword"
+            @input="validateConfirmPasswordInput"
           />
-          <button
-            type="button"
-            class="absolute inset-y-0 right-0 pr-3 flex items-center"
-            :disabled="isLoading"
-            @click="showConfirmPassword = !showConfirmPassword"
+        </div>
+        <div
+          v-if="confirmPasswordErrors.length > 0 && confirmPassword"
+          class="mt-2 space-y-1"
+        >
+          <p
+            v-for="error in confirmPasswordErrors"
+            :key="error"
+            class="text-xs text-red-600"
           >
-            <Icon
-              :name="showConfirmPassword ? 'eye-closed' : 'eye-open'"
-              class="text-gray-400"
-            />
-          </button>
-        </div>
-        <p v-if="errors.confirmPassword" class="mt-2 text-sm/6 text-red-600">
-          {{ errors.confirmPassword }}
-        </p>
-      </div>
-
-      <div v-if="submitError" class="rounded-lg bg-red-50 p-4">
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <Icon name="x" class="text-red-400" />
-          </div>
-          <div class="ml-3">
-            <h3 class="text-sm/6 font-medium text-red-800">
-              {{ submitError }}
-            </h3>
-          </div>
+            {{ error }}
+          </p>
         </div>
       </div>
 
-      <div v-if="submitSuccess" class="rounded-lg bg-green-50 p-4">
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <Icon name="check-circle" class="text-green-400" />
-          </div>
-          <div class="ml-3">
-            <h3 class="text-sm/6 font-medium text-green-800">
-              {{ submitSuccess }}
-            </h3>
-          </div>
-        </div>
-      </div>
-
+      <!-- Submit Button -->
       <div>
         <button
           type="submit"
-          :disabled="isLoading || !isFormValid"
-          class="w-full flex justify-center py-2 px-3 border border-transparent rounded-md shadow-sm text-sm/6 font-semibold text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150 ease-in-out"
+          :disabled="!isFormValid || isSubmitting"
+          class="w-full flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          <Icon v-if="isLoading" name="loading" class="-ml-1 mr-3 text-white" />
-          {{ isLoading ? "Processing..." : submitButtonText }}
-        </button>
-      </div>
-
-      <div v-if="showBackButton" class="text-center">
-        <button
-          type="button"
-          class="text-sm/6 text-indigo-600 hover:text-indigo-500 transition duration-150 ease-in-out"
-          :disabled="isLoading"
-          @click="$emit('back')"
-        >
-          Back
+          <span v-if="!isSubmitting">{{ submitButtonText }}</span>
+          <span v-else class="flex items-center">
+            <svg
+              class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Processing...
+          </span>
         </button>
       </div>
     </form>
+
+    <!-- Error Display -->
+    <div v-if="submitError" class="rounded-md bg-red-50 p-4">
+      <div class="flex">
+        <ExclamationTriangleIcon
+          class="h-5 w-5 text-red-400"
+          aria-hidden="true"
+        />
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-red-800">Error</h3>
+          <div class="mt-1 text-sm text-red-700">{{ submitError }}</div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
-<script>
-import { ref, computed, watch } from "vue";
-import { getAuthState } from "../utils/auth";
-import { getCookie } from "../utils/cookies";
+<script setup>
+import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
+import { setPassword } from "../utils/auth";
 import {
+  validatePassword,
+  validatePasswordConfirmation,
   calculatePasswordStrength,
   getPasswordStrengthText,
   getPasswordStrengthColor,
   getPasswordStrengthPercentage,
-  validatePassword,
-  validatePasswordConfirmation,
 } from "../utils/validation";
-import Icon from "./Icon.vue";
+import { ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
 
-export default {
-  name: "SetPasswordForm",
-  components: {
-    Icon,
+const props = defineProps({
+  action: {
+    type: String,
+    required: true,
+    validator: (value) => ["signup", "reset_password"].includes(value),
   },
-  props: {
-    action: {
-      type: String,
-      required: true,
-      validator: (value) => ["signup", "reset_password"].includes(value),
-    },
-    showBackButton: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  emits: ["submit", "success", "error", "back"],
-  setup(props, { emit }) {
-    const isLoading = ref(false);
-    const showPassword = ref(false);
-    const showConfirmPassword = ref(false);
-    const submitError = ref("");
-    const submitSuccess = ref("");
+});
 
-    const formData = ref({
-      password: "",
-      confirmPassword: "",
-    });
+const router = useRouter();
 
-    const errors = ref({
-      password: "",
-      confirmPassword: "",
-    });
+const password = ref("");
+const confirmPassword = ref("");
+const passwordErrors = ref([]);
+const confirmPasswordErrors = ref([]);
+const submitError = ref(null);
+const isSubmitting = ref(false);
 
-    const formTitle = computed(() => {
-      return props.action === "signup"
-        ? "Set Account Password"
-        : "Reset Password";
-    });
+const passwordStrength = computed(() =>
+  calculatePasswordStrength(password.value),
+);
+const strengthText = computed(() =>
+  getPasswordStrengthText(passwordStrength.value),
+);
+const strengthColor = computed(() =>
+  getPasswordStrengthColor(passwordStrength.value),
+);
+const strengthPercentage = computed(() =>
+  getPasswordStrengthPercentage(passwordStrength.value),
+);
 
-    const formDescription = computed(() => {
-      return props.action === "signup"
-        ? "Set a secure password for your account"
-        : "Enter your new password";
-    });
+const submitButtonText = computed(() => {
+  return props.action === "signup" ? "Create Account" : "Reset Password";
+});
 
-    const submitButtonText = computed(() => {
-      return props.action === "signup"
-        ? "Complete Registration"
-        : "Reset Password";
-    });
+const isFormValid = computed(() => {
+  return (
+    password.value &&
+    confirmPassword.value &&
+    passwordErrors.value.length === 0 &&
+    confirmPasswordErrors.value.length === 0
+  );
+});
 
-    const passwordStrength = computed(() => {
-      return calculatePasswordStrength(formData.value.password);
-    });
+const validatePasswordInput = () => {
+  const validation = validatePassword(password.value);
+  passwordErrors.value = validation.errors;
+  if (confirmPassword.value) {
+    validateConfirmPasswordInput();
+  }
+};
 
-    const passwordStrengthPercentage = computed(() => {
-      return getPasswordStrengthPercentage(passwordStrength.value);
-    });
+const validateConfirmPasswordInput = () => {
+  const validation = validatePasswordConfirmation(
+    password.value,
+    confirmPassword.value,
+  );
+  confirmPasswordErrors.value = validation.errors;
+};
 
-    const passwordStrengthText = computed(() => {
-      return getPasswordStrengthText(passwordStrength.value);
-    });
+const handleSubmit = async () => {
+  validatePasswordInput();
+  validateConfirmPasswordInput();
 
-    const passwordStrengthColor = computed(() => {
-      return getPasswordStrengthColor(passwordStrength.value);
-    });
+  if (!isFormValid.value) {
+    return;
+  }
 
-    const isFormValid = computed(() => {
-      return (
-        formData.value.password &&
-        formData.value.confirmPassword &&
-        !errors.value.password &&
-        !errors.value.confirmPassword
-      );
-    });
+  isSubmitting.value = true;
+  submitError.value = null;
 
-    function validatePasswordLocal() {
-      const result = validatePassword(formData.value.password);
-      errors.value.password = result.errors[0] || "";
-
-      if (formData.value.confirmPassword) {
-        validateConfirmPasswordLocal();
-      }
-    }
-
-    function validateConfirmPasswordLocal() {
-      const result = validatePasswordConfirmation(
-        formData.value.password,
-        formData.value.confirmPassword,
-      );
-      errors.value.confirmPassword = result.errors[0] || "";
-    }
-
-    function validateForm() {
-      validatePasswordLocal();
-      validateConfirmPasswordLocal();
-
-      return isFormValid.value;
-    }
-
-    function getAuthStateLocal() {
-      return getAuthState();
-    }
-
-    function getCsrfToken() {
-      return getCookie("csrftoken");
-    }
-
-    async function handleSubmit() {
-      submitError.value = "";
-      submitSuccess.value = "";
-
-      if (!validateForm()) {
-        return;
-      }
-
-      isLoading.value = true;
-
-      try {
-        const authState = getAuthStateLocal();
-        if (!authState) {
-          throw new Error("Authentication state not found, please start over");
-        }
-
-        if (authState.status !== "verified") {
-          throw new Error("Please complete identity verification first");
-        }
-
-        const requestData = {
-          password: formData.value.password,
-        };
-
-        const endpoint =
-          props.action === "signup"
-            ? "/api/auth/signup/"
-            : "/api/auth/password/";
-
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCsrfToken(),
-          },
-          credentials: "include",
-          body: JSON.stringify(requestData),
-        });
-
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
-          throw new Error(data.error || `Server error (${response.status})`);
-        }
-
-        const data = await response.json();
-
-        const successMessage =
-          props.action === "signup"
-            ? "Registration successful! Welcome aboard"
-            : "Password reset successful!";
-
-        submitSuccess.value = successMessage;
-
-        // Delete OTP and auth flow state from localStorage on success
-        localStorage.removeItem("auth_otp");
-        localStorage.removeItem("auth_flow");
-        localStorage.removeItem("auth_redirect_time");
-
-        emit("success", { action: props.action, data });
-
-        // Redirect to / after success
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 2000);
-      } catch (error) {
-        console.error("Submit failed:", error);
-        submitError.value =
-          error.message || "Operation failed, please try again";
-        emit("error", error);
-      } finally {
-        isLoading.value = false;
-      }
-    }
-
-    return {
-      action: props.action, // Expose action to template
-      formData,
-      errors,
-      isLoading,
-      showPassword,
-      showConfirmPassword,
-      submitError,
-      submitSuccess,
-      formTitle,
-      formDescription,
-      submitButtonText,
-      passwordStrength,
-      passwordStrengthPercentage,
-      passwordStrengthText,
-      passwordStrengthColor,
-      isFormValid,
-      validatePassword: validatePasswordLocal,
-      validateConfirmPassword: validateConfirmPasswordLocal,
-      handleSubmit,
-    };
-  },
+  try {
+    await setPassword(props.action, password.value);
+    router.push("/");
+  } catch (e) {
+    submitError.value = e.message;
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 </script>
-
-<style scoped>
-input:focus {
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.transition-all {
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-
-.password-strength-bar {
-  transition:
-    width 0.3s ease-in-out,
-    background-color 0.3s ease-in-out;
-}
-</style>
