@@ -187,7 +187,8 @@ import { ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
 import { useAuth } from "../composables/useAuth";
 
 const router = useRouter();
-const { isAuthenticated, checkAuthentication } = useAuth();
+const { isAuthenticated, checkAuthentication, notifyAuthStateChanged } =
+  useAuth();
 
 const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 const activeTab = ref("password");
@@ -241,6 +242,7 @@ const handlePasswordLogin = async () => {
       passwordInput.value,
       passwordTurnstileToken.value,
     );
+    notifyAuthStateChanged();
     router.push("/");
   } catch (e) {
     passwordError.value = e.message;

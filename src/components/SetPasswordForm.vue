@@ -157,6 +157,7 @@ import {
   getPasswordStrengthPercentage,
 } from "../utils/validation";
 import { ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
+import { useAuth } from "../composables/useAuth";
 
 const props = defineProps({
   action: {
@@ -167,6 +168,7 @@ const props = defineProps({
 });
 
 const router = useRouter();
+const { notifyAuthStateChanged } = useAuth();
 
 const password = ref("");
 const confirmPassword = ref("");
@@ -230,6 +232,7 @@ const handleSubmit = async () => {
 
   try {
     await setPassword(props.action, password.value);
+    notifyAuthStateChanged();
     router.push("/");
   } catch (e) {
     submitError.value = e.message;
