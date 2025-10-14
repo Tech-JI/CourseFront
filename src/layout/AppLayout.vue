@@ -9,8 +9,8 @@
         <div class="flex h-16 justify-between">
           <div class="flex">
             <div class="flex shrink-0 items-center">
-              <router-link to="/" class="text-xl font-bold text-indigo-600">
-                JI Course Review
+              <router-link to="/" class="text-2xl font-bold text-indigo-600">
+                GC Atlas
               </router-link>
             </div>
             <div
