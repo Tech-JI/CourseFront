@@ -32,13 +32,19 @@
 
       <div class="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
         <div class="text-center">
+          <h1 class="text-4xl font-bold tracking-tight sm:text-7xl">
+            <span
+              class="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-transparent"
+              >Atlas</span
+            >
+          </h1>
           <h1
             class="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl"
           >
             GC Course Review
           </h1>
-          <p class="mt-6 text-lg leading-8 text-gray-600">
-            UMJI Course Reviews, Rankings, and Recommendations
+          <p class="mt-4 text-xl tracking-tight text-gray-600 sm:text-2xl">
+            Coming really, really soon.
           </p>
           <p class="mt-2 text-base text-gray-500">
             {{ reviewCount.toLocaleString() }} reviews and counting
