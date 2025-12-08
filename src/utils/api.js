@@ -1,8 +1,14 @@
 // Lightweight API utilities used across components
 // checkAuthentication: returns a boolean indicating auth status
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+
+export async function apiFetch(path, options = {}) {
+  return fetch(`${API_BASE_URL}${path}`, options);
+}
+
 export async function checkAuthentication() {
   try {
-    const response = await fetch("/api/user/status/");
+    const response = await apiFetch("/api/user/status/");
     if (response.ok) {
       const data = await response.json();
       return !!data.isAuthenticated;
@@ -14,4 +20,4 @@ export async function checkAuthentication() {
   }
 }
 
-export default { checkAuthentication };
+export default { apiFetch, checkAuthentication };

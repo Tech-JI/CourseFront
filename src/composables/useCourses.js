@@ -1,4 +1,5 @@
 import { ref, reactive } from "vue";
+import { apiFetch } from "../utils/api";
 
 export function useCourses() {
   const courses = ref([]);
@@ -27,7 +28,7 @@ export function useCourses() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await fetch("/api/departments/");
+      const response = await apiFetch("/api/departments/");
       if (!response.ok) throw new Error("Failed to fetch departments");
       departments.value = await response.json();
     } catch (e) {
@@ -49,7 +50,7 @@ export function useCourses() {
     params.append("page", pagination.current_page);
 
     try {
-      const response = await fetch(`/api/courses/?${params.toString()}`);
+      const response = await apiFetch(`/api/courses/?${params.toString()}`);
       if (!response.ok) {
         const errorData = await response
           .json()
@@ -59,11 +60,11 @@ export function useCourses() {
         );
       }
       const data = await response.json();
-      courses.value = data.courses;
-      pagination.current_page = data.pagination.current_page;
-      pagination.total_pages = data.pagination.total_pages;
-      pagination.total_courses = data.pagination.total_courses;
-      pagination.limit = data.pagination.limit;
+      // DRF 标准分页格式: { count, next, previous, results }
+      courses.value = data.results || [];
+      const totalCount = data.count || 0;
+      pagination.total_courses = totalCount;
+      pagination.total_pages = Math.ceil(totalCount / pagination.limit) || 1;
     } catch (e) {
       console.error("useCourses: Error fetching courses:", e);
       error.value = e.message;
