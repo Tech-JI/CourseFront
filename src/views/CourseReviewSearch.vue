@@ -75,6 +75,7 @@ import { useRoute, useRouter } from "vue-router";
 import { MagnifyingGlassIcon } from "@heroicons/vue/20/solid";
 import "md-editor-v3/lib/style.css";
 import { sanitize } from "../utils/sanitize";
+import { apiFetch } from "../utils/api";
 import { useAuth } from "../composables/useAuth";
 import ReviewPagination from "../components/ReviewPagination.vue";
 
@@ -92,10 +93,21 @@ const reviews = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const reviewsFullCount = ref(0);
-const remaining = ref(0);
 const courseShortName = ref("");
 const query = ref("");
 const { isAuthenticated, checkAuthentication } = useAuth();
+
+const fetchCourseInfo = async () => {
+  try {
+    const response = await apiFetch(`/api/courses/${props.courseId}/`);
+    if (response.ok) {
+      const data = await response.json();
+      courseShortName.value = data.course_code;
+    }
+  } catch (e) {
+    console.error("Error fetching course info:", e);
+  }
+};
 
 const fetchReviews = async () => {
   loading.value = true;
@@ -108,8 +120,8 @@ const fetchReviews = async () => {
   }
 
   try {
-    const response = await fetch(
-      `/api/course/${props.courseId}/review_search/?q=${encodeURIComponent(
+    const response = await apiFetch(
+      `/api/courses/${props.courseId}/reviews/?q=${encodeURIComponent(
         searchQuery.value,
       )}`,
     );
@@ -124,11 +136,9 @@ const fetchReviews = async () => {
       return;
     }
     const data = await response.json();
-    reviews.value = data.reviews;
-    reviewsFullCount.value = data.reviews_full_count;
-    remaining.value = data.remaining;
-    courseShortName.value = data.course_short_name;
-    query.value = data.query;
+    reviews.value = data;
+    reviewsFullCount.value = data.length;
+    query.value = searchQuery.value;
   } catch (e) {
     error.value = e.message;
   } finally {
@@ -158,6 +168,7 @@ watch(isAuthenticated, (newAuth) => {
 onMounted(async () => {
   searchQuery.value = route.query.q || "";
   await checkAuthentication();
+  await fetchCourseInfo();
   await fetchReviews();
 });
 

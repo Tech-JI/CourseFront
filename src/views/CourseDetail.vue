@@ -617,6 +617,7 @@ import {
 import { MdEditor, MdPreview } from "md-editor-v3";
 import "md-editor-v3/lib/style.css";
 import { sanitize } from "../utils/sanitize";
+import { apiFetch } from "../utils/api";
 import { useAuth } from "../composables/useAuth";
 import { useReviews } from "../composables/useReviews";
 import ReviewPagination from "../components/ReviewPagination.vue";
@@ -680,7 +681,7 @@ const fetchCourse = async () => {
   loading.value = true;
   error.value = null;
   try {
-    const response = await fetch(`/api/course/${courseId.value}/`);
+    const response = await apiFetch(`/api/courses/${courseId.value}/`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -798,6 +799,11 @@ const deleteReview = async () => {
     return;
   }
 
+  if (!userReview.value?.id) {
+    alert("No review to delete.");
+    return;
+  }
+
   if (
     !confirm("Are you sure you want to delete your review for this course?")
   ) {
@@ -805,12 +811,10 @@ const deleteReview = async () => {
   }
 
   try {
-    const updatedCourse = await deleteReviewFn(courseId.value);
-    if (updatedCourse) {
-      course.value = updatedCourse;
-      userReview.value = null;
-      alert("Review deleted successfully!");
-    }
+    await deleteReviewFn(userReview.value.id);
+    userReview.value = null;
+    course.value.can_write_review = true;
+    alert("Review deleted successfully!");
   } catch (error) {
     console.error("Error deleting review:", error);
     alert(`Error deleting review: ${error.message}`);

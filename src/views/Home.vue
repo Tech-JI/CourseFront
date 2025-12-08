@@ -141,6 +141,7 @@ import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { MagnifyingGlassIcon } from "@heroicons/vue/24/outline";
 import { useAuth } from "../composables/useAuth";
+import { apiFetch } from "../utils/api";
 
 const router = useRouter();
 const reviewCount = ref(0);
@@ -153,7 +154,7 @@ onMounted(async () => {
 
 const fetchLandingData = async () => {
   try {
-    const response = await fetch("/api/landing/");
+    const response = await apiFetch("/api/landing/");
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
