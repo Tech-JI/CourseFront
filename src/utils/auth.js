@@ -10,7 +10,7 @@ const FLOW_STATE_STORAGE_KEY = "auth_flow";
  * @returns {Promise<{otp: string, redirectUrl: string}>}
  */
 export async function initiateAuth(action, turnstileToken) {
-  const response = await fetch("/api/auth/initiate/", {
+  const response = await fetch("/api/auth/init/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
