@@ -75,22 +75,13 @@
           </div>
 
           <div>
-            <label
-              for="password"
-              class="block text-sm font-medium leading-6 text-gray-900"
-            >
-              Password
-            </label>
-            <div class="mt-2">
-              <input
-                id="password"
-                v-model="passwordInput"
-                type="password"
-                autocomplete="current-password"
-                required
-                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              />
-            </div>
+            <PasswordInput
+              id="password"
+              v-model="passwordInput"
+              label="Password"
+              autocomplete="current-password"
+              required
+            />
           </div>
 
           <div class="flex items-center justify-end">
@@ -112,6 +103,7 @@
               @verify="onPasswordTurnstileVerified"
               @expire="onPasswordTurnstileExpired"
               @error="onPasswordTurnstileError"
+              class="flex justify-center"
             />
           </div>
 
@@ -183,6 +175,7 @@ import { useRouter } from "vue-router";
 import { loginWithPassword, clearAuthFlowState } from "../utils/auth";
 import AuthInitiate from "../components/AuthInitiate.vue";
 import Turnstile from "../components/Turnstile.vue";
+import PasswordInput from "../components/PasswordInput.vue";
 import { ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
 import { useAuth } from "../composables/useAuth";
 
@@ -213,7 +206,6 @@ onMounted(async () => {
 
 const onPasswordTurnstileVerified = (token) => {
   passwordTurnstileToken.value = token;
-  passwordError.value = null;
 };
 
 const onPasswordTurnstileExpired = () => {

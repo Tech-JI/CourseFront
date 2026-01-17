@@ -3,27 +3,15 @@
     <form class="space-y-6" @submit.prevent="handleSubmit">
       <!-- Password Field -->
       <div>
-        <label
-          for="password"
-          class="block text-sm font-medium leading-6 text-gray-900"
-        >
-          Password
-        </label>
-        <div class="mt-2">
-          <input
-            id="password"
-            v-model="password"
-            type="password"
-            autocomplete="new-password"
-            required
-            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-            :class="{
-              'ring-red-500 focus:ring-red-500':
-                passwordErrors.length > 0 && password,
-            }"
-            @input="validatePasswordInput"
-          />
-        </div>
+        <PasswordInput
+          id="password"
+          v-model="password"
+          label="Password"
+          autocomplete="new-password"
+          required
+          :has-error="passwordErrors.length > 0 && !!password"
+          @input="validatePasswordInput"
+        />
 
         <!-- Password Strength Indicator -->
         <div v-if="password" class="mt-2">
@@ -58,27 +46,15 @@
 
       <!-- Confirm Password Field -->
       <div>
-        <label
-          for="confirmPassword"
-          class="block text-sm font-medium leading-6 text-gray-900"
-        >
-          Confirm Password
-        </label>
-        <div class="mt-2">
-          <input
-            id="confirmPassword"
-            v-model="confirmPassword"
-            type="password"
-            autocomplete="new-password"
-            required
-            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-            :class="{
-              'ring-red-500 focus:ring-red-500':
-                confirmPasswordErrors.length > 0 && confirmPassword,
-            }"
-            @input="validateConfirmPasswordInput"
-          />
-        </div>
+        <PasswordInput
+          id="confirmPassword"
+          v-model="confirmPassword"
+          label="Confirm Password"
+          autocomplete="new-password"
+          required
+          :has-error="confirmPasswordErrors.length > 0 && !!confirmPassword"
+          @input="validateConfirmPasswordInput"
+        />
         <div
           v-if="confirmPasswordErrors.length > 0 && confirmPassword"
           class="mt-2 space-y-1"
@@ -148,6 +124,7 @@
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { setPassword } from "../utils/auth";
+import PasswordInput from "./PasswordInput.vue";
 import {
   validatePassword,
   validatePasswordConfirmation,
