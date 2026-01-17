@@ -17,7 +17,7 @@
         Your One-Time Password
       </h3>
       <p class="text-sm text-gray-500 mb-4">
-        Copy this code and paste it in the university questionnaire
+        Copy this code and paste it in the university questionnaire platform
       </p>
 
       <div

@@ -158,10 +158,6 @@
         <!-- Questionnaire Login -->
         <div v-else-if="activeTab === 'questionnaire'">
           <div class="mb-4">
-            <p class="text-sm text-gray-600">
-              Sign in using your university credentials via the questionnaire
-              system.
-            </p>
           </div>
           <AuthInitiate action="login" />
         </div>
