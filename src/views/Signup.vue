@@ -18,6 +18,9 @@
             sign in to your existing account
           </router-link>
         </p>
+        <p class="mt-2 text-center text-sm text-gray-500">
+          Note: Your username will be the same as your JAccount
+        </p>
       </div>
 
       <div class="mt-8 bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">

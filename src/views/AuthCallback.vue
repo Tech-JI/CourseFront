@@ -60,9 +60,11 @@ import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { verifyCallback } from "../utils/auth";
 import { ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
+import { useAuth } from "../composables/useAuth";
 
 const route = useRoute();
 const router = useRouter();
+const { notifyAuthStateChanged } = useAuth();
 
 const isProcessing = ref(true);
 const error = ref(null);
@@ -81,9 +83,14 @@ onMounted(async () => {
     const data = await verifyCallback(action, account, answer_id);
 
     if (data.is_logged_in) {
+      notifyAuthStateChanged();
       router.push("/");
     } else {
-      router.push(`/${action}`);
+      if (action === "reset_password") {
+        router.push("/reset");
+      } else {
+        router.push(`/${action}`);
+      }
     }
   } catch (e) {
     error.value = e.message;

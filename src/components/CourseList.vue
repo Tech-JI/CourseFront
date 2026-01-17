@@ -280,7 +280,7 @@
 
                       <div v-if="!isAuthenticated" class="text-center">
                         <router-link
-                          to="/accounts/login/"
+                          to="/login"
                           class="text-sm text-indigo-600 hover:text-indigo-900 font-medium"
                         >
                           Login for scores

@@ -110,7 +110,7 @@
             </div>
             <div v-else class="space-x-4">
               <router-link
-                to="/accounts/login"
+                to="/login"
                 class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium cursor-pointer inline-flex items-center min-h-[44px]"
               >
                 Login
@@ -156,7 +156,7 @@
           <div class="space-y-1">
             <DisclosureButton
               as="router-link"
-              to="/accounts/login"
+              to="/login"
               class="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
             >
               Login

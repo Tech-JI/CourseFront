@@ -14,11 +14,8 @@ import "./style.css";
 const routes = [
   { path: "/", component: Landing },
   { path: "/login", component: Login },
-  { path: "/accounts/login", component: Login }, // Legacy route for backward compatibility
   { path: "/signup", component: Signup },
-  { path: "/accounts/signup", component: Signup },
   { path: "/reset", component: ResetPassword },
-  { path: "/accounts/reset", component: ResetPassword },
   { path: "/callback", component: AuthCallback },
   { path: "/course/:courseId", component: CourseDetail, props: true },
   {

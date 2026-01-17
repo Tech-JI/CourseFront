@@ -28,6 +28,7 @@ export function useAuth() {
       });
       if (response.ok) {
         isAuthenticated.value = false;
+        notifyAuthStateChanged();
         return true;
       } else {
         console.error("useAuth: logout failed", response.status);
