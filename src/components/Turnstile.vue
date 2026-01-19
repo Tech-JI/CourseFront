@@ -29,24 +29,29 @@ const renderTurnstile = () => {
 };
 
 onMounted(() => {
+  const SCRIPT_ID = "cloudflare-turnstile-script";
   if (window.turnstile) {
     renderTurnstile();
-  } else {
-    const script = document.createElement("script");
-    script.src =
-      "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback";
+    return;
+  }
+
+  let script = document.getElementById(SCRIPT_ID);
+
+  if (!script) {
+    script = document.createElement("script");
+    script.id = SCRIPT_ID;
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
     script.async = true;
     script.defer = true;
     document.head.appendChild(script);
-
-    window.onloadTurnstileCallback = () => {
-      renderTurnstile();
-    };
   }
+  script.addEventListener("load", () => {
+    renderTurnstile();
+  });
 });
 
 onUnmounted(() => {
-  if (widgetId) {
+  if (widgetId && window.turnstile) {
     window.turnstile.remove(widgetId);
   }
 });
