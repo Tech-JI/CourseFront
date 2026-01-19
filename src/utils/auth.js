@@ -169,7 +169,13 @@ export function getOtpState() {
   const otpState = localStorage.getItem(OTP_STORAGE_KEY);
   if (!otpState) return null;
 
-  const parsed = JSON.parse(otpState);
+  let parsed;
+  try {
+    parsed = JSON.parse(otpState);
+  } catch {
+    localStorage.removeItem(OTP_STORAGE_KEY);
+    return null;
+  }
   if (parsed.expires_at < Date.now()) {
     localStorage.removeItem(OTP_STORAGE_KEY);
     return null;
@@ -186,7 +192,13 @@ export function getAuthFlowState() {
   const flowState = localStorage.getItem(FLOW_STATE_STORAGE_KEY);
   if (!flowState) return null;
 
-  const parsed = JSON.parse(flowState);
+  let parsed;
+  try {
+    parsed = JSON.parse(flowState);
+  } catch {
+    localStorage.removeItem(FLOW_STATE_STORAGE_KEY);
+    return null;
+  }
   if (parsed.expires_at < Date.now()) {
     localStorage.removeItem(FLOW_STATE_STORAGE_KEY);
     return null;
