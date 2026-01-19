@@ -16,6 +16,7 @@ const emit = defineEmits(["verify", "expire", "error"]);
 
 const turnstileContainer = ref(null);
 let widgetId = null;
+let script = null;
 
 const renderTurnstile = () => {
   if (window.turnstile && turnstileContainer.value) {
@@ -28,14 +29,18 @@ const renderTurnstile = () => {
   }
 };
 
+const handleScriptLoad = () => {
+  renderTurnstile();
+};
+
 onMounted(() => {
-  const SCRIPT_ID = "cloudflare-turnstile-script";
   if (window.turnstile) {
     renderTurnstile();
     return;
   }
 
-  let script = document.getElementById(SCRIPT_ID);
+  const SCRIPT_ID = "cloudflare-turnstile-script";
+  script = document.getElementById(SCRIPT_ID);
 
   if (!script) {
     script = document.createElement("script");
@@ -45,9 +50,7 @@ onMounted(() => {
     script.defer = true;
     document.head.appendChild(script);
   }
-  script.addEventListener("load", () => {
-    renderTurnstile();
-  });
+  script.addEventListener("load", handleScriptLoad);
 });
 
 onUnmounted(() => {
@@ -59,6 +62,10 @@ onUnmounted(() => {
 const reset = () => {
   if (widgetId) {
     window.turnstile.reset(widgetId);
+  }
+
+  if (script) {
+    script.removeEventListener("load", handleScriptLoad);
   }
 };
 
