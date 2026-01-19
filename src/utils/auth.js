@@ -3,6 +3,30 @@ import { getCookie } from "./cookies";
 const OTP_STORAGE_KEY = "auth_otp";
 const FLOW_STATE_STORAGE_KEY = "auth_flow";
 
+// Default timeout
+const DEFAULT_OTP_TIMEOUT_SECONDS = 120;
+const DEFAULT_TEMP_TOKEN_TIMEOUT_SECONDS = 600;
+
+function parsePositiveInt(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.floor(parsed);
+}
+
+function getOtpTimeoutSeconds() {
+  return parsePositiveInt(
+    import.meta.env.VITE_AUTH_OTP_TIMEOUT,
+    DEFAULT_OTP_TIMEOUT_SECONDS,
+  );
+}
+
+function getTempTokenTimeoutSeconds() {
+  return parsePositiveInt(
+    import.meta.env.VITE_AUTH_TEMP_TOKEN_TIMEOUT,
+    DEFAULT_TEMP_TOKEN_TIMEOUT_SECONDS,
+  );
+}
+
 /**
  * Initiates the authentication flow.
  * @param {string} action - The authentication action (signup, login, reset_password).
@@ -28,15 +52,17 @@ export async function initiateAuth(action, turnstileToken) {
   }
 
   const data = await response.json();
-  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+  const now = Date.now();
+  const otpExpiresAt = now + getOtpTimeoutSeconds() * 1000;
+  const tempTokenExpiresAt = now + getTempTokenTimeoutSeconds() * 1000;
 
   localStorage.setItem(
     OTP_STORAGE_KEY,
-    JSON.stringify({ otp: data.otp, expires_at: expiresAt }),
+    JSON.stringify({ otp: data.otp, expires_at: otpExpiresAt }),
   );
   localStorage.setItem(
     FLOW_STATE_STORAGE_KEY,
-    JSON.stringify({ status: "pending", expires_at: expiresAt }),
+    JSON.stringify({ status: "pending", expires_at: tempTokenExpiresAt }),
   );
 
   return { otp: data.otp, redirectUrl: data.redirect_url };

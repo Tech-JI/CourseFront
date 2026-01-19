@@ -58,7 +58,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { verifyCallback } from "../utils/auth";
+import { verifyCallback, getAuthFlowState } from "../utils/auth";
 import { ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
 import { useAuth } from "../composables/useAuth";
 
@@ -75,6 +75,14 @@ onMounted(async () => {
   if (!action || !account || !answer_id) {
     error.value =
       "Missing required parameters. Please start the process again.";
+    isProcessing.value = false;
+    return;
+  }
+
+  const flowState = getAuthFlowState();
+  if (!flowState || flowState.status !== "pending") {
+    error.value =
+      "Auth flow not initiated or expired. Please start the process again.";
     isProcessing.value = false;
     return;
   }
