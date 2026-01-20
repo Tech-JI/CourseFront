@@ -28,6 +28,7 @@ export function useAuth() {
       });
       if (response.ok) {
         isAuthenticated.value = false;
+        notifyAuthStateChanged();
         return true;
       } else {
         console.error("useAuth: logout failed", response.status);
@@ -44,6 +45,10 @@ export function useAuth() {
     checkAuthentication();
   };
 
+  const notifyAuthStateChanged = () => {
+    window.dispatchEvent(new CustomEvent("auth-state-changed"));
+  };
+
   onMounted(() => {
     checkAuthentication();
     window.addEventListener("auth-state-changed", onAuthStateChanged);
@@ -57,6 +62,7 @@ export function useAuth() {
     isAuthenticated,
     checkAuthentication,
     logout,
+    notifyAuthStateChanged,
   };
 }
 

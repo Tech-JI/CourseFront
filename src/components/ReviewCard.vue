@@ -174,7 +174,7 @@ const { voteOnReview } = useReviews();
 const handleVote = async (reviewId, isKudos) => {
   if (!props.isAuthenticated) {
     if (confirm("Please login to vote on reviews!")) {
-      router.push("/accounts/login");
+      router.push("/login");
     }
     return;
   }

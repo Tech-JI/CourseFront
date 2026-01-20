@@ -2,59 +2,52 @@
   <div
     class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
   >
-    <div class="max-w-md w-full space-y-8">
-      <div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Verifying Authentication
-        </h2>
-      </div>
+    <div class="max-w-md w-full">
+      <div class="text-center">
+        <!-- Loading State -->
+        <div v-if="isProcessing">
+          <svg
+            class="animate-spin mx-auto h-12 w-12 text-indigo-600"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <h2 class="mt-6 text-xl font-semibold text-gray-900">
+            Verifying your identity...
+          </h2>
+          <p class="mt-2 text-sm text-gray-600">
+            Please wait while we confirm your submission
+          </p>
+        </div>
 
-      <div v-if="loading" class="text-center">
-        <div
-          class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"
-        ></div>
-        <p class="mt-4 text-sm text-gray-500">
-          Please wait while we verify your authentication...
-        </p>
-      </div>
-
-      <div v-else-if="error" class="rounded-md bg-red-50 p-4">
-        <div class="flex">
-          <div class="ml-3">
-            <h3 class="text-sm font-medium text-red-800">
+        <!-- Error State -->
+        <div v-else-if="error" class="rounded-md bg-red-50 p-4">
+          <div class="flex flex-col items-center">
+            <ExclamationTriangleIcon class="h-12 w-12 text-red-400 mb-4" />
+            <h3 class="text-lg font-medium text-red-800 mb-2">
               Verification Failed
             </h3>
-            <div class="mt-2 text-sm text-red-700">
-              <p>{{ error }}</p>
-            </div>
-            <div class="mt-4 flex space-x-3">
-              <button
-                type="button"
-                class="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2"
-                @click="retryVerification"
-              >
-                Retry Verification
-              </button>
-              <router-link
-                :to="getReturnPath()"
-                class="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 inline-block"
-              >
-                Return to {{ getActionDisplayName() }}
-              </router-link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-else-if="success" class="rounded-md bg-green-50 p-4">
-        <div class="flex">
-          <div class="ml-3">
-            <h3 class="text-sm font-medium text-green-800">
-              Verification Successful
-            </h3>
-            <div class="mt-2 text-sm text-green-700">
-              <p>Authentication verified successfully. Redirecting...</p>
-            </div>
+            <p class="text-sm text-red-700 mb-4">{{ error }}</p>
+            <router-link
+              :to="getRetryRoute()"
+              class="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500"
+            >
+              Try Again
+            </router-link>
           </div>
         </div>
       </div>
@@ -65,173 +58,59 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { verifyCallback, getAuthFlowState } from "../utils/auth";
+import { ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
+import { useAuth } from "../composables/useAuth";
 
 const route = useRoute();
 const router = useRouter();
+const { notifyAuthStateChanged } = useAuth();
 
-const loading = ref(true);
+const isProcessing = ref(true);
 const error = ref(null);
-const success = ref(false);
-const parsedParams = ref({});
 
-const parseUrlParams = () => {
-  const { account, answer_id, action } = route.query;
+onMounted(async () => {
+  const { action, account, answer_id } = route.query;
 
-  if (!account || !answer_id || !action) {
+  if (!action || !account || !answer_id) {
     error.value =
-      "Missing required parameters. Please try the authentication process again.";
-    loading.value = false;
-    return null;
+      "Missing required parameters. Please start the process again.";
+    isProcessing.value = false;
+    return;
   }
 
-  const validActions = ["signup", "login", "reset_password"];
-  if (!validActions.includes(action)) {
+  const flowState = getAuthFlowState();
+  if (!flowState || flowState.status !== "pending") {
     error.value =
-      "Invalid action parameter. Please try the authentication process again.";
-    loading.value = false;
-    return null;
+      "Auth flow not initiated or expired. Please start the process again.";
+    isProcessing.value = false;
+    return;
   }
 
-  return { account, answer_id, action };
-};
-
-const verifyAuthentication = async (params) => {
   try {
-    const response = await fetch("/api/auth/verify/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(params),
-    });
+    const data = await verifyCallback(action, account, answer_id);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.detail ||
-          errorData.error ||
-          `Server returned ${response.status}`,
-      );
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (err) {
-    console.error("Verification API error:", err);
-    throw err;
-  }
-};
-
-const storeVerificationResult = (action, expires_at, account) => {
-  const authFlowState = {
-    status: "verified",
-    action: action,
-    account: account,
-    expires_at: expires_at,
-    verified_at: new Date().toISOString(),
-  };
-
-  const stateString = JSON.stringify(authFlowState);
-  localStorage.setItem("auth_flow", stateString);
-  sessionStorage.setItem("auth_flow", stateString);
-  sessionStorage.setItem("auth_verification_data", stateString);
-};
-
-const getRedirectPath = (action) => {
-  switch (action) {
-    case "login":
-      return "/";
-    case "signup":
-      return "/signup";
-    case "reset_password":
-      return "/reset";
-    default:
-      return "/";
-  }
-};
-
-const getReturnPath = () => {
-  const action = parsedParams.value.action;
-  switch (action) {
-    case "signup":
-      return "/signup";
-    case "login":
-      return "/login";
-    case "reset_password":
-      return "/reset";
-    default:
-      return "/";
-  }
-};
-
-const getActionDisplayName = () => {
-  const action = parsedParams.value.action;
-  switch (action) {
-    case "signup":
-      return "Sign Up";
-    case "login":
-      return "Login";
-    case "reset_password":
-      return "Reset Password";
-    default:
-      return "Home";
-  }
-};
-
-const retryVerification = () => {
-  error.value = null;
-  loading.value = true;
-  performVerification();
-};
-
-const performVerification = async () => {
-  try {
-    const params = parseUrlParams();
-    if (!params) {
-      return;
-    }
-
-    parsedParams.value = params;
-
-    const result = await verifyAuthentication(params);
-
-    storeVerificationResult(result.action, result.expires_at, params.account);
-
-    success.value = true;
-    loading.value = false;
-
-    try {
-      if (result.action === "login") {
-        window.dispatchEvent(new CustomEvent("auth-state-changed"));
+    if (data.is_logged_in) {
+      notifyAuthStateChanged();
+      router.push("/");
+    } else {
+      if (action === "reset_password") {
+        router.push("/reset");
+      } else {
+        router.push(`/${action}`);
       }
-    } catch (e) {
-      console.warn("Could not dispatch auth-state-changed event:", e);
     }
-    const redirectPath = getRedirectPath(result.action);
-
-    setTimeout(() => {
-      const urlParams = new URLSearchParams({
-        verified: "true",
-        account: params.account,
-        action: result.action,
-        expires_at: result.expires_at,
-        from_callback: "true",
-      });
-
-      const redirectWithParams = `${redirectPath}?${urlParams.toString()}`;
-
-      router.push(redirectWithParams);
-    }, 500);
-  } catch (err) {
-    console.error("Verification failed:", err);
-    error.value =
-      err.message || "An unexpected error occurred during verification.";
-    loading.value = false;
+  } catch (e) {
+    error.value = e.message;
+    isProcessing.value = false;
   }
-};
-
-onMounted(() => {
-  performVerification();
 });
+
+const getRetryRoute = () => {
+  const action = route.query.action;
+  if (action === "signup") return "/signup";
+  if (action === "login") return "/login";
+  if (action === "reset_password") return "/reset";
+  return "/";
+};
 </script>

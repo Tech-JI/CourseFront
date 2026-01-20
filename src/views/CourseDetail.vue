@@ -178,7 +178,7 @@
                   <LockClosedIcon class="mx-auto h-12 w-12 text-gray-400" />
                   <p class="mt-2 text-sm text-gray-500">
                     <router-link
-                      to="/accounts/login/"
+                      to="/login"
                       class="font-medium text-indigo-600 hover:text-indigo-500"
                     >
                       Login
@@ -247,7 +247,7 @@
                   <LockClosedIcon class="mx-auto h-12 w-12 text-gray-400" />
                   <p class="mt-2 text-sm text-gray-500">
                     <router-link
-                      to="/accounts/login/"
+                      to="/login"
                       class="font-medium text-indigo-600 hover:text-indigo-500"
                     >
                       Login
@@ -377,14 +377,14 @@
               </h3>
               <div class="mt-2 text-sm text-blue-700">
                 <router-link
-                  to="/accounts/login/"
+                  to="/login"
                   class="font-medium underline hover:text-blue-600"
                 >
                   Sign up
                 </router-link>
                 or
                 <router-link
-                  to="/accounts/login/"
+                  to="/login"
                   class="font-medium underline hover:text-blue-600"
                 >
                   log in
@@ -583,7 +583,7 @@
             </p>
             <p v-else class="text-sm text-gray-600 flex-1">
               <router-link
-                to="/accounts/login/"
+                to="/login"
                 class="font-medium text-indigo-600 hover:text-indigo-500"
               >
                 Login
@@ -706,7 +706,7 @@ const fetchUserReview = async () => {
 const vote = async (value, forLayup) => {
   if (!isAuthenticated.value) {
     if (confirm("Please login to vote!")) {
-      router.push("/accounts/login");
+      router.push("/login");
     }
     return;
   }
