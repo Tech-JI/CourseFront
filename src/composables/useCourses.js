@@ -11,7 +11,6 @@ export function useCourses() {
     current_page: 1,
     total_pages: 1,
     total_courses: 0,
-    limit: 20,
   });
 
   const filters = reactive({
@@ -45,6 +44,9 @@ export function useCourses() {
     if (filters.code) params.append("code", filters.code.trim());
     if (filters.min_quality && isAuth)
       params.append("min_quality", filters.min_quality);
+    if (filters.min_difficulty && isAuth)
+      params.append("min_difficulty", filters.min_difficulty);
+
     params.append("sort_by", sorting.sort_by);
     params.append("sort_order", sorting.sort_order);
     params.append("page", pagination.current_page);
@@ -60,11 +62,15 @@ export function useCourses() {
         );
       }
       const data = await response.json();
-      // DRF 标准分页格式: { count, next, previous, results }
+      // DRF pagination: { count, next, previous, results }
       courses.value = data.results || [];
       const totalCount = data.count || 0;
       pagination.total_courses = totalCount;
-      pagination.total_pages = Math.ceil(totalCount / pagination.limit) || 1;
+      // TODO: let backend return total pages
+      if (pagination.current_page == 1) {
+        pagination.total_pages =
+          Math.ceil(totalCount / courses.value.length) || 1;
+      }
     } catch (e) {
       console.error("useCourses: Error fetching courses:", e);
       error.value = e.message;

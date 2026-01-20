@@ -816,7 +816,6 @@ const deleteReview = async () => {
     course.value.can_write_review = true;
     alert("Review deleted successfully!");
   } catch (error) {
-    console.error("Error deleting review:", error);
     alert(`Error deleting review: ${error.message}`);
   }
 };
