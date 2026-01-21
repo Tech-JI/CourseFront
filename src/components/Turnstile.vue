@@ -45,7 +45,8 @@ onMounted(() => {
   if (!script) {
     script = document.createElement("script");
     script.id = SCRIPT_ID;
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    script.src =
+      "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
     script.async = true;
     script.defer = true;
     document.head.appendChild(script);

@@ -34,11 +34,7 @@
           class="h-5 w-5 text-gray-400"
           aria-hidden="true"
         />
-        <EyeSlashIcon
-          v-else
-          class="h-5 w-5 text-gray-400"
-          aria-hidden="true"
-        />
+        <EyeSlashIcon v-else class="h-5 w-5 text-gray-400" aria-hidden="true" />
       </button>
     </div>
   </div>
