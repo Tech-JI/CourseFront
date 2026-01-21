@@ -75,8 +75,9 @@ import { useRoute, useRouter } from "vue-router";
 import { MagnifyingGlassIcon } from "@heroicons/vue/20/solid";
 import "md-editor-v3/lib/style.css";
 import { sanitize } from "../utils/sanitize";
-import { apiFetch } from "../utils/api";
 import { useAuth } from "../composables/useAuth";
+import { useCourses } from "../composables/useCourses";
+import { useReviews } from "../composables/useReviews";
 import ReviewPagination from "../components/ReviewPagination.vue";
 
 const props = defineProps({
@@ -96,14 +97,13 @@ const reviewsFullCount = ref(0);
 const courseShortName = ref("");
 const query = ref("");
 const { isAuthenticated, checkAuthentication } = useAuth();
+const { fetchCourse } = useCourses();
+const { searchCourseReviews } = useReviews();
 
 const fetchCourseInfo = async () => {
   try {
-    const response = await apiFetch(`/api/courses/${props.courseId}/`);
-    if (response.ok) {
-      const data = await response.json();
-      courseShortName.value = data.course_code;
-    }
+    const data = await fetchCourse(props.courseId);
+    courseShortName.value = data?.course_code || "";
   } catch (e) {
     console.error("Error fetching course info:", e);
   }
@@ -120,26 +120,16 @@ const fetchReviews = async () => {
   }
 
   try {
-    const response = await apiFetch(
-      `/api/courses/${props.courseId}/reviews/?q=${encodeURIComponent(
-        searchQuery.value,
-      )}`,
-    );
-    if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
-        error.value =
-          "Authentication required. Please log in to search reviews.";
-        isAuthenticated.value = false;
-      } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return;
-    }
-    const data = await response.json();
+    const data = await searchCourseReviews(props.courseId, searchQuery.value);
     reviews.value = data;
     reviewsFullCount.value = data.length;
     query.value = searchQuery.value;
   } catch (e) {
+    if (e?.status === 401 || e?.status === 403) {
+      error.value = "Authentication required. Please log in to search reviews.";
+      isAuthenticated.value = false;
+      return;
+    }
     error.value = e.message;
   } finally {
     loading.value = false;

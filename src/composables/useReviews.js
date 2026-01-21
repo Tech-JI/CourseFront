@@ -6,6 +6,24 @@ export function useReviews() {
   const loading = ref(false);
   const error = ref(null);
 
+  const searchCourseReviews = async (courseId, q) => {
+    if (!courseId) return [];
+    try {
+      const response = await apiFetch(
+        `/api/courses/${courseId}/reviews/?q=${encodeURIComponent(q ?? "")}`,
+      );
+      if (!response.ok) {
+        const err = new Error(`HTTP error! status: ${response.status}`);
+        err.status = response.status;
+        throw err;
+      }
+      return await response.json();
+    } catch (e) {
+      error.value = e.message;
+      throw e;
+    }
+  };
+
   const fetchUserReview = async (courseId) => {
     if (!courseId) return null;
     try {
@@ -46,7 +64,7 @@ export function useReviews() {
       }
       return await response.json();
     } catch (e) {
-      console.error("useReviews: submitReview error", e);
+      error.value = e.message;
       throw e;
     }
   };
@@ -63,7 +81,7 @@ export function useReviews() {
       }
       return true;
     } catch (e) {
-      console.error("useReviews: deleteReview error", e);
+      error.value = e.message;
       throw e;
     }
   };
@@ -81,7 +99,7 @@ export function useReviews() {
       if (!response.ok) throw new Error("Vote failed");
       return await response.json();
     } catch (e) {
-      console.error("useReviews: vote error", e);
+      error.value = e.message;
       throw e;
     }
   };
@@ -99,7 +117,7 @@ export function useReviews() {
       if (!response.ok) throw new Error("Vote on review failed");
       return await response.json();
     } catch (e) {
-      console.error("useReviews: voteOnReview error", e);
+      error.value = e.message;
       throw e;
     }
   };
@@ -107,6 +125,7 @@ export function useReviews() {
   return {
     loading,
     error,
+    searchCourseReviews,
     fetchUserReview,
     submitReview,
     deleteReview,
