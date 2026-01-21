@@ -777,12 +777,12 @@ const submitReview = async () => {
     if (createdReview) {
       userReview.value = createdReview;
       newReview.value = { term: "", professor: "", comments: "" };
-      // # TODO: seperate review retrieval and course detail
+      // TODO: separate review retrieval and course detail
       await fetchCourse();
       alert("Review submitted successfully!");
     }
   } catch (e) {
-    if ("detail" in e.raw) {
+    if (!e.raw || "detail" in e.raw) {
       alert(`Error submitting review:\n${e.message}`);
     } else {
       formErrors.value = e.raw;
@@ -810,7 +810,7 @@ const deleteReview = async () => {
   try {
     await deleteReviewFn(userReview.value.id);
     userReview.value = null;
-    // # TODO: seperate review retrieval and course detail
+    // TODO: separate review retrieval and course detail
     await fetchCourse();
     alert("Review deleted successfully!");
   } catch (error) {

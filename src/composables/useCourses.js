@@ -68,8 +68,9 @@ export function useCourses() {
       pagination.total_courses = totalCount;
       // TODO: let backend return total pages
       if (pagination.current_page == 1) {
+        const page_size = courses.value.length;
         pagination.total_pages =
-          Math.ceil(totalCount / courses.value.length) || 1;
+          page_size > 0 ? Math.ceil(totalCount / page_size) : 1;
       }
     } catch (e) {
       error.value = e.message;
