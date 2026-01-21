@@ -744,7 +744,7 @@ const updateReviewData = (updateData) => {
 const validateReview = () => {
   const errs = {};
   if (!newReview.value.term || newReview.value.term.length !== 3) {
-    errs.term = ["Please provide a valid term, e.g. 24F"];
+    errs.term = ["Please provide a valid term, e.g. 26F"];
   }
   if (
     !newReview.value.professor ||
@@ -773,18 +773,19 @@ const submitReview = async () => {
   }
 
   try {
-    const updatedCourse = await submitReviewFn(courseId.value, newReview.value);
-    if (updatedCourse) {
-      course.value = updatedCourse;
+    const createdReview = await submitReviewFn(courseId.value, newReview.value);
+    if (createdReview) {
+      userReview.value = createdReview;
       newReview.value = { term: "", professor: "", comments: "" };
-      await fetchUserReview();
+      // # TODO: seperate review retrieval and course detail
+      await fetchCourse();
       alert("Review submitted successfully!");
     }
-  } catch (error) {
-    if (error && error.errors && typeof error.errors === "object") {
-      formErrors.value = error.errors;
+  } catch (e) {
+    if ("detail" in e.raw) {
+      alert(`Error submitting review:\n${e.message}`);
     } else {
-      alert(`Error submitting review:\n${error.message}`);
+      formErrors.value = e.raw;
     }
   }
 };
@@ -809,7 +810,8 @@ const deleteReview = async () => {
   try {
     await deleteReviewFn(userReview.value.id);
     userReview.value = null;
-    course.value.can_write_review = true;
+    // # TODO: seperate review retrieval and course detail
+    await fetchCourse();
     alert("Review deleted successfully!");
   } catch (error) {
     alert(`Error deleting review: ${error.message}`);

@@ -60,7 +60,9 @@ export function useReviews() {
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.detail || "Failed to submit review");
+        const err = new Error(errorData?.detail || "Failed to submit review");
+        err.raw = errorData;
+        throw err;
       }
       return await response.json();
     } catch (e) {
