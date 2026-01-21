@@ -1,10 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "unicorn",
-    "typescript",
-    "oxc"
-  ],
+  "plugins": ["unicorn", "typescript", "oxc"],
   "categories": {},
   "rules": {
     "for-direction": "warn",
@@ -139,9 +135,5 @@
     "builtin": true
   },
   "globals": {},
-  "ignorePatterns": [
-    "dist",
-    "node_modules",
-    "TailwindPlus"
-  ]
+  "ignorePatterns": ["dist", "node_modules", "TailwindPlus"]
 }

@@ -157,8 +157,7 @@
 
         <!-- Questionnaire Login -->
         <div v-else-if="activeTab === 'questionnaire'">
-          <div class="mb-4">
-          </div>
+          <div class="mb-4"></div>
           <AuthInitiate action="login" />
         </div>
       </div>
