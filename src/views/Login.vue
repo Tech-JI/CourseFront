@@ -169,7 +169,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { loginWithPassword, clearAuthFlowState } from "../utils/auth";
+import { clearAuthFlowState } from "../utils/auth";
 import AuthInitiate from "../components/AuthInitiate.vue";
 import Turnstile from "../components/Turnstile.vue";
 import PasswordInput from "../components/PasswordInput.vue";
@@ -177,8 +177,12 @@ import { ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
 import { useAuth } from "../composables/useAuth";
 
 const router = useRouter();
-const { isAuthenticated, checkAuthentication, notifyAuthStateChanged } =
-  useAuth();
+const {
+  isAuthenticated,
+  checkAuthentication,
+  notifyAuthStateChanged,
+  loginWithPassword,
+} = useAuth();
 
 const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 const activeTab = ref("password");

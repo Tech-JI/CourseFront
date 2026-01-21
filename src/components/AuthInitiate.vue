@@ -109,9 +109,10 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { initiateAuth, getOtpState } from "../utils/auth";
+import { getOtpState } from "../utils/auth";
 import Turnstile from "./Turnstile.vue";
 import { ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
+import { useAuth } from "../composables/useAuth";
 
 const props = defineProps({
   action: {
@@ -129,6 +130,8 @@ const error = ref(null);
 const copyButtonText = ref("Copy Code and Proceed");
 const isRedirecting = ref(false);
 const isLoading = ref(false);
+
+const { initiateAuth } = useAuth();
 
 onMounted(() => {
   const existingOtp = getOtpState();

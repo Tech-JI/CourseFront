@@ -58,13 +58,13 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { verifyCallback, getAuthFlowState } from "../utils/auth";
+import { getAuthFlowState } from "../utils/auth";
 import { ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
 import { useAuth } from "../composables/useAuth";
 
 const route = useRoute();
 const router = useRouter();
-const { notifyAuthStateChanged } = useAuth();
+const { notifyAuthStateChanged, verifyCallback } = useAuth();
 
 const isProcessing = ref(true);
 const error = ref(null);
