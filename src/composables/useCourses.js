@@ -31,7 +31,7 @@ export function useCourses() {
       if (!response.ok) throw new Error("Failed to fetch departments");
       departments.value = await response.json();
     } catch (e) {
-      console.error("useCourses: Error fetching departments:", e);
+      error.value = e.message;
     }
   };
 
@@ -72,11 +72,24 @@ export function useCourses() {
           Math.ceil(totalCount / courses.value.length) || 1;
       }
     } catch (e) {
-      console.error("useCourses: Error fetching courses:", e);
       error.value = e.message;
       courses.value = [];
     } finally {
       loading.value = false;
+    }
+  };
+
+  const fetchCourse = async (courseId) => {
+    if (!courseId) return null;
+    try {
+      const response = await apiFetch(`/api/courses/${courseId}/`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (e) {
+      error.value = e.message;
+      throw e;
     }
   };
 
@@ -132,6 +145,7 @@ export function useCourses() {
     pagination,
     filters,
     sorting,
+    fetchCourse,
     fetchDepartments,
     fetchCourses,
     getQueryObject,

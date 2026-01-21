@@ -617,8 +617,8 @@ import {
 import { MdEditor, MdPreview } from "md-editor-v3";
 import "md-editor-v3/lib/style.css";
 import { sanitize } from "../utils/sanitize";
-import { apiFetch } from "../utils/api";
 import { useAuth } from "../composables/useAuth";
+import { useCourses } from "../composables/useCourses";
 import { useReviews } from "../composables/useReviews";
 import ReviewPagination from "../components/ReviewPagination.vue";
 
@@ -629,6 +629,7 @@ const loading = ref(true);
 const error = ref(null);
 const currentTerm = "25S";
 const { isAuthenticated, checkAuthentication } = useAuth();
+const { fetchCourse: fetchCourseFn } = useCourses();
 const {
   fetchUserReview: fetchUserReviewFn,
   submitReview: submitReviewFn,
@@ -681,11 +682,7 @@ const fetchCourse = async () => {
   loading.value = true;
   error.value = null;
   try {
-    const response = await apiFetch(`/api/courses/${courseId.value}/`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    course.value = await response.json();
+    course.value = await fetchCourseFn(courseId.value);
   } catch (e) {
     error.value = e.message;
   } finally {
@@ -784,7 +781,6 @@ const submitReview = async () => {
       alert("Review submitted successfully!");
     }
   } catch (error) {
-    console.error("Error submitting review:", error);
     if (error && error.errors && typeof error.errors === "object") {
       formErrors.value = error.errors;
     } else {
