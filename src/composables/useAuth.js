@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from "vue";
-import { checkAuthentication as checkAuthUtil } from "../utils/api";
+import { apiFetch, checkAuthentication as checkAuthUtil } from "../utils/api";
 import { getCookie } from "../utils/cookies";
 
 export function useAuth() {
@@ -19,7 +19,7 @@ export function useAuth() {
 
   const logout = async () => {
     try {
-      const response = await fetch("/api/auth/logout/", {
+      const response = await apiFetch("/api/auth/logout/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

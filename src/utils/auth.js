@@ -1,3 +1,4 @@
+import { apiFetch } from "./api";
 import { getCookie } from "./cookies";
 
 const OTP_STORAGE_KEY = "auth_otp";
@@ -34,7 +35,7 @@ function getTempTokenTimeoutSeconds() {
  * @returns {Promise<{otp: string, redirectUrl: string}>}
  */
 export async function initiateAuth(action, turnstileToken) {
-  const response = await fetch("/api/auth/init/", {
+  const response = await apiFetch("/api/auth/init/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -76,7 +77,7 @@ export async function initiateAuth(action, turnstileToken) {
  * @returns {Promise<any>}
  */
 export async function verifyCallback(action, account, answerId) {
-  const response = await fetch("/api/auth/verify/", {
+  const response = await apiFetch("/api/auth/verify/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -115,7 +116,7 @@ export async function verifyCallback(action, account, answerId) {
  */
 export async function setPassword(action, password) {
   const url = action === "signup" ? "/api/auth/signup/" : "/api/auth/password/";
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -141,7 +142,7 @@ export async function setPassword(action, password) {
  * @returns {Promise<any>}
  */
 export async function loginWithPassword(account, password, turnstileToken) {
-  const response = await fetch("/api/auth/login/", {
+  const response = await apiFetch("/api/auth/login/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

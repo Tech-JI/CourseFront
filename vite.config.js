@@ -9,7 +9,6 @@ export default defineConfig({
       "/api": {
         target: "http://localhost:8000", // Your Django server
         changeOrigin: false,
-        // rewrite: (path) => path.replace(/^\/api/, ''), //  Not needed if your Django URLs start with /api
       },
     },
   },
