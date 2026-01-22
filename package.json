@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
-    "@j178/prek": "^0.2.30",
+    "@j178/prek": "^0.3.0",
     "@vitejs/plugin-vue": "^6.0.3",
     "autoprefixer": "^10.4.23",
     "oxfmt": "^0.26.0",
