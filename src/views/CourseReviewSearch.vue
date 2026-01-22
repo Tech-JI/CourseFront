@@ -156,10 +156,8 @@ watch(isAuthenticated, (newAuth) => {
 });
 
 onMounted(async () => {
-  searchQuery.value = route.query.q || "";
   await checkAuthentication();
   await fetchCourseInfo();
-  await fetchReviews();
 });
 
 const updateReviewData = (updateData) => {
