@@ -777,8 +777,23 @@ const submitReview = async () => {
     if (createdReview) {
       userReview.value = createdReview;
       newReview.value = { term: "", professor: "", comments: "" };
-      // TODO: separate review retrieval and course detail
-      await fetchCourse();
+
+      // Handle course update
+      course.value.review_set.unshift(createdReview);
+      course.value.review_count += 1;
+      course.value.can_write_review = false;
+
+      // Update professor count
+      const profName = createdReview.professor;
+      const profEntry = course.value.professors_and_review_count.find(
+        (p) => p[0] === profName,
+      );
+      if (profEntry) {
+        profEntry[1] += 1;
+      } else {
+        course.value.professors_and_review_count.push([profName, 1]);
+      }
+
       alert("Review submitted successfully!");
     }
   } catch (e) {
@@ -808,10 +823,33 @@ const deleteReview = async () => {
   }
 
   try {
-    await deleteReviewFn(userReview.value.id);
+    const deletedId = userReview.value.id;
+    const deletedProf = userReview.value.professor;
+
+    await deleteReviewFn(deletedId);
+
+    // Handle Course update
     userReview.value = null;
-    // TODO: separate review retrieval and course detail
-    await fetchCourse();
+    course.value.review_set = course.value.review_set.filter(
+      (r) => r.id !== deletedId,
+    );
+    course.value.review_count -= 1;
+    course.value.can_write_review = true;
+
+    // Update professor count
+    const profEntry = course.value.professors_and_review_count.find(
+      (p) => p[0] === deletedProf,
+    );
+    if (profEntry) {
+      profEntry[1] -= 1;
+      if (profEntry[1] === 0) {
+        course.value.professors_and_review_count =
+          course.value.professors_and_review_count.filter(
+            (p) => p[0] !== deletedProf,
+          );
+      }
+    }
+
     alert("Review deleted successfully!");
   } catch (error) {
     alert(`Error deleting review: ${error.message}`);
