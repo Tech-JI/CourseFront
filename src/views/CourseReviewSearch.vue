@@ -96,7 +96,7 @@ const error = ref(null);
 const reviewsFullCount = ref(0);
 const courseShortName = ref("");
 const query = ref("");
-const { isAuthenticated, checkAuthentication } = useAuth();
+const { isAuthenticated, checkAuthentication, logout } = useAuth();
 const { fetchCourse } = useCourses();
 const { searchCourseReviews } = useReviews();
 
@@ -127,7 +127,7 @@ const fetchReviews = async () => {
   } catch (e) {
     if (e?.status === 401 || e?.status === 403) {
       error.value = "Authentication required. Please log in to search reviews.";
-      isAuthenticated.value = false;
+      logout();
       return;
     }
     error.value = e.message;
@@ -148,12 +148,6 @@ watch(
   },
   { immediate: true },
 );
-
-watch(isAuthenticated, (newAuth) => {
-  if (newAuth) {
-    fetchReviews();
-  }
-});
 
 onMounted(async () => {
   await checkAuthentication();

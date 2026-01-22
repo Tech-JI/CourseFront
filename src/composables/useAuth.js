@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref } from "vue";
 import { apiFetch } from "../utils/api";
 import { getCookie } from "../utils/cookies";
 import {
@@ -31,9 +31,10 @@ function getTempTokenTimeoutSeconds() {
   );
 }
 
-export function useAuth() {
-  const isAuthenticated = ref(false);
+// Global authentication state
+const isAuthenticated = ref(false);
 
+export function useAuth() {
   const checkAuthentication = async () => {
     try {
       const response = await apiFetch("/api/user/status/");
@@ -106,15 +107,19 @@ export function useAuth() {
     }
 
     const data = await response.json();
-    localStorage.setItem(
-      FLOW_STATE_STORAGE_KEY,
-      JSON.stringify({
-        status: "verified",
-        action: data.action,
-        expires_at: data.expires_at * 1000,
-      }),
-    );
 
+    if (data.is_logged_in) {
+      isAuthenticated.value = true;
+    } else {
+      localStorage.setItem(
+        FLOW_STATE_STORAGE_KEY,
+        JSON.stringify({
+          status: "verified",
+          action: data.action,
+          expires_at: data.expires_at * 1000,
+        }),
+      );
+    }
     return data;
   };
 
@@ -135,6 +140,9 @@ export function useAuth() {
       throw new Error(errorData?.error || "Failed to set password.");
     }
 
+    if (action === "signup") {
+      isAuthenticated.value = true;
+    }
     clearAuthFlowState();
     return await response.json();
   };
@@ -157,6 +165,8 @@ export function useAuth() {
       const errorData = await response.json().catch(() => null);
       throw new Error(errorData?.error || "Login failed.");
     }
+
+    isAuthenticated.value = true;
     return await response.json();
   };
 
@@ -171,7 +181,6 @@ export function useAuth() {
       });
       if (response.ok) {
         isAuthenticated.value = false;
-        notifyAuthStateChanged();
         return true;
       } else {
         console.error("useAuth: logout failed", response.status);
@@ -183,24 +192,6 @@ export function useAuth() {
     }
   };
 
-  const onAuthStateChanged = () => {
-    // Re-check authentication when other parts of app signal change
-    checkAuthentication();
-  };
-
-  const notifyAuthStateChanged = () => {
-    window.dispatchEvent(new CustomEvent("auth-state-changed"));
-  };
-
-  onMounted(() => {
-    checkAuthentication();
-    window.addEventListener("auth-state-changed", onAuthStateChanged);
-  });
-
-  onUnmounted(() => {
-    window.removeEventListener("auth-state-changed", onAuthStateChanged);
-  });
-
   return {
     isAuthenticated,
     checkAuthentication,
@@ -209,7 +200,6 @@ export function useAuth() {
     setPassword,
     loginWithPassword,
     logout,
-    notifyAuthStateChanged,
   };
 }
 

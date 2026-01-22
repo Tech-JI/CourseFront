@@ -145,11 +145,12 @@ import { useLanding } from "../composables/useLanding";
 
 const router = useRouter();
 const reviewCount = ref(0);
-const { isAuthenticated } = useAuth();
+const { isAuthenticated, checkAuthentication } = useAuth();
 const searchQuery = ref("");
 const { fetchLanding } = useLanding();
 
 onMounted(async () => {
+  await checkAuthentication();
   await fetchLandingData();
 });
 

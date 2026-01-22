@@ -64,7 +64,7 @@ import { useAuth } from "../composables/useAuth";
 
 const route = useRoute();
 const router = useRouter();
-const { notifyAuthStateChanged, verifyCallback } = useAuth();
+const { verifyCallback } = useAuth();
 
 const isProcessing = ref(true);
 const error = ref(null);
@@ -91,7 +91,6 @@ onMounted(async () => {
     const data = await verifyCallback(action, account, answer_id);
 
     if (data.is_logged_in) {
-      notifyAuthStateChanged();
       router.push("/");
     } else {
       if (action === "reset_password") {
