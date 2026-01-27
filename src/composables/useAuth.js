@@ -110,6 +110,7 @@ export function useAuth() {
 
     if (data.is_logged_in) {
       isAuthenticated.value = true;
+      clearAuthFlowState();
     } else {
       localStorage.setItem(
         FLOW_STATE_STORAGE_KEY,
