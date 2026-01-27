@@ -146,12 +146,12 @@ watch(
     searchQuery.value = newQuery || "";
     fetchReviews();
   },
-  { immediate: true },
 );
 
 onMounted(async () => {
+  searchQuery.value = route.query.q || "";
   await checkAuthentication();
-  await fetchCourseInfo();
+  await Promise.all([fetchReviews(), fetchCourseInfo()]);
 });
 
 const updateReviewData = (updateData) => {
