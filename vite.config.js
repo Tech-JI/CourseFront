@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:8000", // Your Django server
+        target: process.env.VITE_API_PROXY_TARGET || "http://localhost:8000", // Your Django server
         changeOrigin: false,
         // rewrite: (path) => path.replace(/^\/api/, ''), //  Not needed if your Django URLs start with /api
       },
