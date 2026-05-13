@@ -88,7 +88,7 @@
                   @change="applyFiltersAndSort"
                 >
                   <option value="course_code">Course Code</option>
-                  <option value="num_reviews">Number of Reviews</option>
+                  <option value="review_count">Number of Reviews</option>
                   <option v-if="isAuthenticated" value="quality_score">
                     Quality Score
                   </option>
