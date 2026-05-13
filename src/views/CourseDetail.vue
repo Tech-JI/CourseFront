@@ -680,7 +680,7 @@ const fetchCourse = async () => {
   loading.value = true;
   error.value = null;
   try {
-    const response = await fetch(`/api/course/${courseId.value}/`);
+    const response = await fetch(`/api/courses/${courseId.value}/`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -775,10 +775,10 @@ const submitReview = async () => {
   }
 
   try {
-    const updatedCourse = await submitReviewFn(courseId.value, newReview.value);
-    if (updatedCourse) {
-      course.value = updatedCourse;
+    const createdReview = await submitReviewFn(courseId.value, newReview.value);
+    if (createdReview) {
       newReview.value = { term: "", professor: "", comments: "" };
+      await fetchCourse();
       await fetchUserReview();
       alert("Review submitted successfully!");
     }
@@ -805,9 +805,12 @@ const deleteReview = async () => {
   }
 
   try {
-    const updatedCourse = await deleteReviewFn(courseId.value);
-    if (updatedCourse) {
-      course.value = updatedCourse;
+    if (!userReview.value?.id) {
+      throw new Error("Could not find your review to delete");
+    }
+    const deleted = await deleteReviewFn(userReview.value.id);
+    if (deleted) {
+      await fetchCourse();
       userReview.value = null;
       alert("Review deleted successfully!");
     }

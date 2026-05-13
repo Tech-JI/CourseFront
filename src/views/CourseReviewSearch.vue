@@ -109,7 +109,7 @@ const fetchReviews = async () => {
 
   try {
     const response = await fetch(
-      `/api/course/${props.courseId}/review_search/?q=${encodeURIComponent(
+      `/api/courses/${props.courseId}/reviews/?q=${encodeURIComponent(
         searchQuery.value,
       )}`,
     );
@@ -124,11 +124,11 @@ const fetchReviews = async () => {
       return;
     }
     const data = await response.json();
-    reviews.value = data.reviews;
-    reviewsFullCount.value = data.reviews_full_count;
-    remaining.value = data.remaining;
-    courseShortName.value = data.course_short_name;
-    query.value = data.query;
+    reviews.value = Array.isArray(data) ? data : [];
+    reviewsFullCount.value = reviews.value.length;
+    remaining.value = 0;
+    courseShortName.value = `Course ${props.courseId}`;
+    query.value = searchQuery.value;
   } catch (e) {
     error.value = e.message;
   } finally {
