@@ -775,25 +775,9 @@ const submitReview = async () => {
   try {
     const createdReview = await submitReviewFn(courseId.value, newReview.value);
     if (createdReview) {
-      userReview.value = createdReview;
       newReview.value = { term: "", professor: "", comments: "" };
-
-      // Handle course update
-      course.value.review_set.unshift(createdReview);
-      course.value.review_count += 1;
-      course.value.can_write_review = false;
-
-      // Update professor count
-      const profName = createdReview.professor;
-      const profEntry = course.value.professors_and_review_count.find(
-        (p) => p[0] === profName,
-      );
-      if (profEntry) {
-        profEntry[1] += 1;
-      } else {
-        course.value.professors_and_review_count.push([profName, 1]);
-      }
-
+      await fetchCourse();
+      await fetchUserReview();
       alert("Review submitted successfully!");
     }
   } catch (e) {
@@ -823,34 +807,15 @@ const deleteReview = async () => {
   }
 
   try {
-    const deletedId = userReview.value.id;
-    const deletedProf = userReview.value.professor;
-
-    await deleteReviewFn(deletedId);
-
-    // Handle Course update
-    userReview.value = null;
-    course.value.review_set = course.value.review_set.filter(
-      (r) => r.id !== deletedId,
-    );
-    course.value.review_count -= 1;
-    course.value.can_write_review = true;
-
-    // Update professor count
-    const profEntry = course.value.professors_and_review_count.find(
-      (p) => p[0] === deletedProf,
-    );
-    if (profEntry) {
-      profEntry[1] -= 1;
-      if (profEntry[1] === 0) {
-        course.value.professors_and_review_count =
-          course.value.professors_and_review_count.filter(
-            (p) => p[0] !== deletedProf,
-          );
-      }
+    if (!userReview.value?.id) {
+      throw new Error("Could not find your review to delete");
     }
-
-    alert("Review deleted successfully!");
+    const deleted = await deleteReviewFn(userReview.value.id);
+    if (deleted) {
+      await fetchCourse();
+      userReview.value = null;
+      alert("Review deleted successfully!");
+    }
   } catch (error) {
     alert(`Error deleting review: ${error.message}`);
   }

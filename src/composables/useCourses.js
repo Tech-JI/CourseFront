@@ -11,6 +11,7 @@ export function useCourses() {
     current_page: 1,
     total_pages: 1,
     total_courses: 0,
+    limit: 20,
   });
 
   const filters = reactive({
@@ -46,7 +47,6 @@ export function useCourses() {
       params.append("min_quality", filters.min_quality);
     if (filters.min_difficulty && isAuth)
       params.append("min_difficulty", filters.min_difficulty);
-
     params.append("sort_by", sorting.sort_by);
     params.append("sort_order", sorting.sort_order);
     params.append("page", pagination.current_page);
@@ -62,16 +62,12 @@ export function useCourses() {
         );
       }
       const data = await response.json();
-      // DRF pagination: { count, next, previous, results }
       courses.value = data.results || [];
-      const totalCount = data.count || 0;
-      pagination.total_courses = totalCount;
-      // TODO: let backend return total pages
-      if (pagination.current_page == 1) {
-        const page_size = courses.value.length;
-        pagination.total_pages =
-          page_size > 0 ? Math.ceil(totalCount / page_size) : 1;
-      }
+      pagination.total_courses = data.count || 0;
+      pagination.total_pages = Math.max(
+        1,
+        Math.ceil(pagination.total_courses / pagination.limit),
+      );
     } catch (e) {
       error.value = e.message;
       courses.value = [];
@@ -99,6 +95,8 @@ export function useCourses() {
     if (filters.department) query.department = filters.department;
     if (filters.code) query.code = filters.code.trim();
     if (filters.min_quality && isAuth) query.min_quality = filters.min_quality;
+    if (filters.min_difficulty && isAuth)
+      query.min_difficulty = filters.min_difficulty;
     if (sorting.sort_by !== "course_code" || sorting.sort_order !== "asc") {
       query.sort_by = sorting.sort_by;
       query.sort_order = sorting.sort_order;
@@ -132,6 +130,9 @@ export function useCourses() {
     filters.code = query.code || "";
     filters.min_quality = query.min_quality
       ? parseInt(query.min_quality, 10)
+      : null;
+    filters.min_difficulty = query.min_difficulty
+      ? parseInt(query.min_difficulty, 10)
       : null;
     sorting.sort_by = query.sort_by || "course_code";
     sorting.sort_order = query.sort_order || "asc";
