@@ -430,7 +430,7 @@
                     type="text"
                     required
                     :placeholder="currentTerm"
-                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   />
                   <p v-if="formErrors.term" class="mt-1 text-sm text-red-600">
                     {{ formErrors.term[0] }}
@@ -449,7 +449,7 @@
                     type="text"
                     required
                     placeholder="Full name, e.g., John Smith"
-                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   />
                   <p
                     v-if="formErrors.professor"
@@ -618,6 +618,7 @@ import { MdEditor, MdPreview } from "md-editor-v3";
 import "md-editor-v3/lib/style.css";
 import { sanitize } from "../utils/sanitize";
 import { useAuth } from "../composables/useAuth";
+import { useCourses } from "../composables/useCourses";
 import { useReviews } from "../composables/useReviews";
 import ReviewPagination from "../components/ReviewPagination.vue";
 
@@ -628,6 +629,7 @@ const loading = ref(true);
 const error = ref(null);
 const currentTerm = "25S";
 const { isAuthenticated, checkAuthentication } = useAuth();
+const { fetchCourse: fetchCourseFn } = useCourses();
 const {
   fetchUserReview: fetchUserReviewFn,
   submitReview: submitReviewFn,
@@ -680,11 +682,7 @@ const fetchCourse = async () => {
   loading.value = true;
   error.value = null;
   try {
-    const response = await fetch(`/api/course/${courseId.value}/`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    course.value = await response.json();
+    course.value = await fetchCourseFn(courseId.value);
   } catch (e) {
     error.value = e.message;
   } finally {
@@ -746,7 +744,7 @@ const updateReviewData = (updateData) => {
 const validateReview = () => {
   const errs = {};
   if (!newReview.value.term || newReview.value.term.length !== 3) {
-    errs.term = ["Please provide a valid term, e.g. 24F"];
+    errs.term = ["Please provide a valid term, e.g. 26F"];
   }
   if (
     !newReview.value.professor ||
@@ -775,19 +773,34 @@ const submitReview = async () => {
   }
 
   try {
-    const updatedCourse = await submitReviewFn(courseId.value, newReview.value);
-    if (updatedCourse) {
-      course.value = updatedCourse;
+    const createdReview = await submitReviewFn(courseId.value, newReview.value);
+    if (createdReview) {
+      userReview.value = createdReview;
       newReview.value = { term: "", professor: "", comments: "" };
-      await fetchUserReview();
+
+      // Handle course update
+      course.value.review_set.unshift(createdReview);
+      course.value.review_count += 1;
+      course.value.can_write_review = false;
+
+      // Update professor count
+      const profName = createdReview.professor;
+      const profEntry = course.value.professors_and_review_count.find(
+        (p) => p[0] === profName,
+      );
+      if (profEntry) {
+        profEntry[1] += 1;
+      } else {
+        course.value.professors_and_review_count.push([profName, 1]);
+      }
+
       alert("Review submitted successfully!");
     }
-  } catch (error) {
-    console.error("Error submitting review:", error);
-    if (error && error.errors && typeof error.errors === "object") {
-      formErrors.value = error.errors;
+  } catch (e) {
+    if (!e.raw || "detail" in e.raw) {
+      alert(`Error submitting review:\n${e.message}`);
     } else {
-      alert(`Error submitting review:\n${error.message}`);
+      formErrors.value = e.raw;
     }
   }
 };
@@ -798,6 +811,11 @@ const deleteReview = async () => {
     return;
   }
 
+  if (!userReview.value?.id) {
+    alert("No review to delete.");
+    return;
+  }
+
   if (
     !confirm("Are you sure you want to delete your review for this course?")
   ) {
@@ -805,14 +823,35 @@ const deleteReview = async () => {
   }
 
   try {
-    const updatedCourse = await deleteReviewFn(courseId.value);
-    if (updatedCourse) {
-      course.value = updatedCourse;
-      userReview.value = null;
-      alert("Review deleted successfully!");
+    const deletedId = userReview.value.id;
+    const deletedProf = userReview.value.professor;
+
+    await deleteReviewFn(deletedId);
+
+    // Handle Course update
+    userReview.value = null;
+    course.value.review_set = course.value.review_set.filter(
+      (r) => r.id !== deletedId,
+    );
+    course.value.review_count -= 1;
+    course.value.can_write_review = true;
+
+    // Update professor count
+    const profEntry = course.value.professors_and_review_count.find(
+      (p) => p[0] === deletedProf,
+    );
+    if (profEntry) {
+      profEntry[1] -= 1;
+      if (profEntry[1] === 0) {
+        course.value.professors_and_review_count =
+          course.value.professors_and_review_count.filter(
+            (p) => p[0] !== deletedProf,
+          );
+      }
     }
+
+    alert("Review deleted successfully!");
   } catch (error) {
-    console.error("Error deleting review:", error);
     alert(`Error deleting review: ${error.message}`);
   }
 };

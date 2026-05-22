@@ -189,7 +189,6 @@ const handleVote = async (reviewId, isKudos) => {
       user_vote: data.user_vote,
     });
   } catch (e) {
-    console.error("Error voting on review:", e);
     alert("Error voting on review. Please try again.");
   }
 };

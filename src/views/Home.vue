@@ -141,23 +141,22 @@ import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { MagnifyingGlassIcon } from "@heroicons/vue/24/outline";
 import { useAuth } from "../composables/useAuth";
+import { useLanding } from "../composables/useLanding";
 
 const router = useRouter();
 const reviewCount = ref(0);
-const { isAuthenticated } = useAuth();
+const { isAuthenticated, checkAuthentication } = useAuth();
 const searchQuery = ref("");
+const { fetchLanding } = useLanding();
 
 onMounted(async () => {
+  await checkAuthentication();
   await fetchLandingData();
 });
 
 const fetchLandingData = async () => {
   try {
-    const response = await fetch("/api/landing/");
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
+    const data = await fetchLanding();
     reviewCount.value = data.review_count;
   } catch (error) {
     console.error("Error fetching landing data:", error);

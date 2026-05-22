@@ -76,6 +76,8 @@ import { MagnifyingGlassIcon } from "@heroicons/vue/20/solid";
 import "md-editor-v3/lib/style.css";
 import { sanitize } from "../utils/sanitize";
 import { useAuth } from "../composables/useAuth";
+import { useCourses } from "../composables/useCourses";
+import { useReviews } from "../composables/useReviews";
 import ReviewPagination from "../components/ReviewPagination.vue";
 
 const props = defineProps({
@@ -92,10 +94,20 @@ const reviews = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const reviewsFullCount = ref(0);
-const remaining = ref(0);
 const courseShortName = ref("");
 const query = ref("");
-const { isAuthenticated, checkAuthentication } = useAuth();
+const { isAuthenticated, checkAuthentication, logout } = useAuth();
+const { fetchCourse } = useCourses();
+const { searchCourseReviews } = useReviews();
+
+const fetchCourseInfo = async () => {
+  try {
+    const data = await fetchCourse(props.courseId);
+    courseShortName.value = data?.course_code || "";
+  } catch (e) {
+    console.error("Error fetching course info:", e);
+  }
+};
 
 const fetchReviews = async () => {
   loading.value = true;
@@ -108,28 +120,16 @@ const fetchReviews = async () => {
   }
 
   try {
-    const response = await fetch(
-      `/api/course/${props.courseId}/review_search/?q=${encodeURIComponent(
-        searchQuery.value,
-      )}`,
-    );
-    if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
-        error.value =
-          "Authentication required. Please log in to search reviews.";
-        isAuthenticated.value = false;
-      } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+    const data = await searchCourseReviews(props.courseId, searchQuery.value);
+    reviews.value = data;
+    reviewsFullCount.value = data.length;
+    query.value = searchQuery.value;
+  } catch (e) {
+    if (e?.status === 401 || e?.status === 403) {
+      error.value = "Authentication required. Please log in to search reviews.";
+      logout();
       return;
     }
-    const data = await response.json();
-    reviews.value = data.reviews;
-    reviewsFullCount.value = data.reviews_full_count;
-    remaining.value = data.remaining;
-    courseShortName.value = data.course_short_name;
-    query.value = data.query;
-  } catch (e) {
     error.value = e.message;
   } finally {
     loading.value = false;
@@ -146,19 +146,12 @@ watch(
     searchQuery.value = newQuery || "";
     fetchReviews();
   },
-  { immediate: true },
 );
-
-watch(isAuthenticated, (newAuth) => {
-  if (newAuth) {
-    fetchReviews();
-  }
-});
 
 onMounted(async () => {
   searchQuery.value = route.query.q || "";
   await checkAuthentication();
-  await fetchReviews();
+  await Promise.all([fetchReviews(), fetchCourseInfo()]);
 });
 
 const updateReviewData = (updateData) => {

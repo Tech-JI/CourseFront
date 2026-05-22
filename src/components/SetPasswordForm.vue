@@ -123,7 +123,6 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
-import { setPassword } from "../utils/auth";
 import PasswordInput from "./PasswordInput.vue";
 import {
   validatePassword,
@@ -145,7 +144,7 @@ const props = defineProps({
 });
 
 const router = useRouter();
-const { notifyAuthStateChanged } = useAuth();
+const { setPassword } = useAuth();
 
 const password = ref("");
 const confirmPassword = ref("");
@@ -209,7 +208,6 @@ const handleSubmit = async () => {
 
   try {
     await setPassword(props.action, password.value);
-    notifyAuthStateChanged();
     router.push("/");
   } catch (e) {
     submitError.value = e.message;

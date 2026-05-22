@@ -1,4 +1,5 @@
 import { ref, reactive } from "vue";
+import { apiFetch } from "../utils/api";
 
 export function useCourses() {
   const courses = ref([]);
@@ -10,7 +11,6 @@ export function useCourses() {
     current_page: 1,
     total_pages: 1,
     total_courses: 0,
-    limit: 20,
   });
 
   const filters = reactive({
@@ -27,11 +27,11 @@ export function useCourses() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await fetch("/api/departments/");
+      const response = await apiFetch("/api/departments/");
       if (!response.ok) throw new Error("Failed to fetch departments");
       departments.value = await response.json();
     } catch (e) {
-      console.error("useCourses: Error fetching departments:", e);
+      error.value = e.message;
     }
   };
 
@@ -44,12 +44,15 @@ export function useCourses() {
     if (filters.code) params.append("code", filters.code.trim());
     if (filters.min_quality && isAuth)
       params.append("min_quality", filters.min_quality);
+    if (filters.min_difficulty && isAuth)
+      params.append("min_difficulty", filters.min_difficulty);
+
     params.append("sort_by", sorting.sort_by);
     params.append("sort_order", sorting.sort_order);
     params.append("page", pagination.current_page);
 
     try {
-      const response = await fetch(`/api/courses/?${params.toString()}`);
+      const response = await apiFetch(`/api/courses/?${params.toString()}`);
       if (!response.ok) {
         const errorData = await response
           .json()
@@ -59,17 +62,35 @@ export function useCourses() {
         );
       }
       const data = await response.json();
-      courses.value = data.courses;
-      pagination.current_page = data.pagination.current_page;
-      pagination.total_pages = data.pagination.total_pages;
-      pagination.total_courses = data.pagination.total_courses;
-      pagination.limit = data.pagination.limit;
+      // DRF pagination: { count, next, previous, results }
+      courses.value = data.results || [];
+      const totalCount = data.count || 0;
+      pagination.total_courses = totalCount;
+      // TODO: let backend return total pages
+      if (pagination.current_page == 1) {
+        const page_size = courses.value.length;
+        pagination.total_pages =
+          page_size > 0 ? Math.ceil(totalCount / page_size) : 1;
+      }
     } catch (e) {
-      console.error("useCourses: Error fetching courses:", e);
       error.value = e.message;
       courses.value = [];
     } finally {
       loading.value = false;
+    }
+  };
+
+  const fetchCourse = async (courseId) => {
+    if (!courseId) return null;
+    try {
+      const response = await apiFetch(`/api/courses/${courseId}/`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (e) {
+      error.value = e.message;
+      throw e;
     }
   };
 
@@ -125,6 +146,7 @@ export function useCourses() {
     pagination,
     filters,
     sorting,
+    fetchCourse,
     fetchDepartments,
     fetchCourses,
     getQueryObject,

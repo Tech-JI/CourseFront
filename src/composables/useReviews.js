@@ -1,14 +1,35 @@
 import { ref } from "vue";
 import { getCookie } from "../utils/cookies";
+import { apiFetch } from "../utils/api";
 
 export function useReviews() {
   const loading = ref(false);
   const error = ref(null);
 
+  const searchCourseReviews = async (courseId, q) => {
+    if (!courseId) return [];
+    try {
+      const response = await apiFetch(
+        `/api/courses/${courseId}/reviews/?q=${encodeURIComponent(q ?? "")}`,
+      );
+      if (!response.ok) {
+        const err = new Error(`HTTP error! status: ${response.status}`);
+        err.status = response.status;
+        throw err;
+      }
+      return await response.json();
+    } catch (e) {
+      error.value = e.message;
+      throw e;
+    }
+  };
+
   const fetchUserReview = async (courseId) => {
     if (!courseId) return null;
     try {
-      const response = await fetch(`/api/course/${courseId}/my-review/`);
+      const response = await apiFetch(
+        `/api/courses/${courseId}/reviews/?author=me`,
+      );
       if (response.ok) {
         const data = await response.json();
         return Array.isArray(data) ? data[0] : data;
@@ -29,7 +50,7 @@ export function useReviews() {
 
   const submitReview = async (courseId, newReview) => {
     try {
-      const response = await fetch(`/api/course/${courseId}/`, {
+      const response = await apiFetch(`/api/courses/${courseId}/reviews/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -39,35 +60,37 @@ export function useReviews() {
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.detail || "Failed to submit review");
+        const err = new Error(errorData?.detail || "Failed to submit review");
+        err.raw = errorData;
+        throw err;
       }
       return await response.json();
     } catch (e) {
-      console.error("useReviews: submitReview error", e);
+      error.value = e.message;
       throw e;
     }
   };
 
-  const deleteReview = async (courseId) => {
+  const deleteReview = async (reviewId) => {
     try {
-      const response = await fetch(`/api/course/${courseId}/review/`, {
+      const response = await apiFetch(`/api/reviews/${reviewId}/`, {
         method: "DELETE",
         headers: { "X-CSRFToken": getCookie("csrftoken") },
       });
-      if (!response.ok) {
+      if (!response.ok && response.status !== 204) {
         const errorData = await response.json().catch(() => null);
         throw new Error(errorData?.detail || "Failed to delete review");
       }
-      return await response.json();
+      return true;
     } catch (e) {
-      console.error("useReviews: deleteReview error", e);
+      error.value = e.message;
       throw e;
     }
   };
 
   const vote = async (courseId, value, forLayup) => {
     try {
-      const response = await fetch(`/api/course/${courseId}/vote/`, {
+      const response = await apiFetch(`/api/courses/${courseId}/vote/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,14 +101,14 @@ export function useReviews() {
       if (!response.ok) throw new Error("Vote failed");
       return await response.json();
     } catch (e) {
-      console.error("useReviews: vote error", e);
+      error.value = e.message;
       throw e;
     }
   };
 
   const voteOnReview = async (reviewId, isKudos) => {
     try {
-      const response = await fetch(`/api/review/${reviewId}/vote/`, {
+      const response = await apiFetch(`/api/reviews/${reviewId}/vote/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -96,7 +119,7 @@ export function useReviews() {
       if (!response.ok) throw new Error("Vote on review failed");
       return await response.json();
     } catch (e) {
-      console.error("useReviews: voteOnReview error", e);
+      error.value = e.message;
       throw e;
     }
   };
@@ -104,6 +127,7 @@ export function useReviews() {
   return {
     loading,
     error,
+    searchCourseReviews,
     fetchUserReview,
     submitReview,
     deleteReview,
