@@ -17,20 +17,18 @@
         </div>
       </div>
 
-      <!-- Use MdPreview for displaying review comments -->
       <div class="mt-4">
         <MdPreview
           :model-value="truncatedContent"
           :sanitize="sanitize"
-          previewTheme="github"
+          preview-theme="github"
           class="text-sm text-indigo-700 markdown-content"
         />
 
-        <!-- Enhanced Expand/Collapse button -->
         <div v-if="needsTruncation" class="mt-3 flex justify-center">
           <button
-            @click="expanded = !expanded"
             class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-600 shadow-xs hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all"
+            @click="expanded = !expanded"
           >
             {{ expanded ? "Show Less" : "Read More" }}
             <svg
@@ -54,15 +52,12 @@
         </div>
       </div>
 
-      <!-- Review Voting Section -->
       <div
         v-if="isAuthenticated"
         class="mt-6 flex items-center justify-between"
       >
         <div class="flex items-center space-x-4">
-          <!-- Kudos Button -->
           <button
-            @click="handleVote(review.id, true)"
             :class="[
               'inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full transition-colors',
               review.user_vote === true
@@ -70,6 +65,7 @@
                 : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100',
             ]"
             :title="review.user_vote === true ? 'Remove kudos' : 'Give kudos'"
+            @click="handleVote(review.id, true)"
           >
             <HandThumbUpIcon
               :class="[
@@ -82,9 +78,7 @@
             {{ review.kudos_count || 0 }}
           </button>
 
-          <!-- Dislike Button -->
           <button
-            @click="handleVote(review.id, false)"
             :class="[
               'inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full transition-colors',
               review.user_vote === false
@@ -92,6 +86,7 @@
                 : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100',
             ]"
             :title="review.user_vote === false ? 'Remove dislike' : 'Dislike'"
+            @click="handleVote(review.id, false)"
           >
             <HandThumbDownIcon
               :class="[
@@ -103,9 +98,8 @@
           </button>
         </div>
       </div>
-      <!-- Vote counts display only (for non-authenticated users) -->
+
       <div v-else class="mt-6 flex items-center space-x-4">
-        <!-- Kudos Count -->
         <div
           v-if="review.kudos_count > 0"
           class="inline-flex items-center text-sm text-green-600"
@@ -114,7 +108,6 @@
           {{ review.kudos_count }}
         </div>
 
-        <!-- Dislikes Count -->
         <div
           v-if="review.dislike_count > 0"
           class="inline-flex items-center text-sm text-red-600"
@@ -130,6 +123,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
+import { useReviews } from "../composables/useReviews";
 import { MdPreview } from "md-editor-v3";
 import { HandThumbUpIcon, HandThumbDownIcon } from "@heroicons/vue/24/outline";
 import "md-editor-v3/lib/style.css";
@@ -175,31 +169,19 @@ const needsTruncation = computed(() => {
   return props.review?.comments?.split("\n").length > props.maxLines;
 });
 
+const { voteOnReview } = useReviews();
+
 const handleVote = async (reviewId, isKudos) => {
   if (!props.isAuthenticated) {
     if (confirm("Please login to vote on reviews!")) {
-      router.push("/accounts/login");
+      router.push("/login");
     }
     return;
   }
 
   try {
-    const response = await fetch(`/api/review/${reviewId}/vote/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: JSON.stringify({ is_kudos: isKudos }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    // Emit event to parent so it can update the review data
+    const data = await voteOnReview(reviewId, isKudos);
+    if (!data) return;
     emit("reviewUpdated", {
       reviewId,
       kudos_count: data.kudos_count,
@@ -207,25 +189,9 @@ const handleVote = async (reviewId, isKudos) => {
       user_vote: data.user_vote,
     });
   } catch (e) {
-    console.error("Error voting on review:", e);
     alert("Error voting on review. Please try again.");
   }
 };
-
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    const cookies = document.cookie.split(";");
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === name + "=") {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
 </script>
 
 <style scoped>

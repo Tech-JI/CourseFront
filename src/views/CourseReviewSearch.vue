@@ -5,7 +5,7 @@
       <p>{{ error }}</p>
       <div v-if="!isAuthenticated" class="mt-4">
         <router-link
-          to="/accounts/login/"
+          to="/login"
           class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
           Log In to Search Reviews
@@ -26,15 +26,15 @@
         >"
       </h1>
 
-      <form @submit.prevent="performSearch" class="mb-6">
+      <form class="mb-6" @submit.prevent="performSearch">
         <div class="flex max-w-md mx-auto">
           <div class="grid grid-cols-1 grow">
             <input
+              v-model="searchQuery"
               name="q"
               type="search"
               class="col-start-1 row-start-1 block w-full rounded-l-md bg-white py-2 pr-3 pl-10 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
               placeholder="Search reviews..."
-              v-model="searchQuery"
             />
             <MagnifyingGlassIcon
               class="pointer-events-none col-start-1 row-start-1 ml-3 size-5 self-center text-gray-400"
@@ -58,11 +58,11 @@
       <div v-else>
         <ReviewPagination
           :reviews="reviews"
-          :isAuthenticated="isAuthenticated"
+          :is-authenticated="isAuthenticated"
           :sanitize="sanitize"
-          :maxLines="3"
-          :pageSize="10"
-          @reviewUpdated="updateReviewData"
+          :max-lines="3"
+          :page-size="10"
+          @review-updated="updateReviewData"
         />
       </div>
     </div>
@@ -74,8 +74,11 @@ import { ref, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { MagnifyingGlassIcon } from "@heroicons/vue/20/solid";
 import "md-editor-v3/lib/style.css";
-import DOMPurify from "dompurify";
-import ReviewPagination from "./ReviewPagination.vue";
+import { sanitize } from "../utils/sanitize";
+import { useAuth } from "../composables/useAuth";
+import { useCourses } from "../composables/useCourses";
+import { useReviews } from "../composables/useReviews";
+import ReviewPagination from "../components/ReviewPagination.vue";
 
 const props = defineProps({
   courseId: {
@@ -84,17 +87,6 @@ const props = defineProps({
   },
 });
 
-// Sanitize function using DOMPurify with enhanced security configuration
-const sanitize = (html) =>
-  DOMPurify.sanitize(html, {
-    FORBID_TAGS: ["img", "svg", "math", "script", "iframe"],
-    FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onmouseout"],
-    USE_PROFILES: { html: true }, // Only allow HTML, no SVG or MathML
-    SAFE_FOR_TEMPLATES: true, // Protect against template injection
-    SANITIZE_DOM: true, // Protect against DOM clobbering
-    KEEP_CONTENT: false, // Remove content of forbidden tags
-  });
-
 const route = useRoute();
 const router = useRouter();
 const searchQuery = ref("");
@@ -102,16 +94,25 @@ const reviews = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const reviewsFullCount = ref(0);
-const remaining = ref(0);
 const courseShortName = ref("");
 const query = ref("");
-const isAuthenticated = ref(false);
+const { isAuthenticated, checkAuthentication, logout } = useAuth();
+const { fetchCourse } = useCourses();
+const { searchCourseReviews } = useReviews();
+
+const fetchCourseInfo = async () => {
+  try {
+    const data = await fetchCourse(props.courseId);
+    courseShortName.value = data?.course_code || "";
+  } catch (e) {
+    console.error("Error fetching course info:", e);
+  }
+};
 
 const fetchReviews = async () => {
   loading.value = true;
   error.value = null;
 
-  // Check authentication before fetching reviews
   if (!isAuthenticated.value) {
     error.value = "Please log in to search reviews.";
     loading.value = false;
@@ -119,26 +120,16 @@ const fetchReviews = async () => {
   }
 
   try {
-    const response = await fetch(
-      `/api/course/${props.courseId}/review_search/?q=${encodeURIComponent(searchQuery.value)}`,
-    );
-    if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
-        error.value =
-          "Authentication required. Please log in to search reviews.";
-        isAuthenticated.value = false;
-      } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+    const data = await searchCourseReviews(props.courseId, searchQuery.value);
+    reviews.value = data;
+    reviewsFullCount.value = data.length;
+    query.value = searchQuery.value;
+  } catch (e) {
+    if (e?.status === 401 || e?.status === 403) {
+      error.value = "Authentication required. Please log in to search reviews.";
+      logout();
       return;
     }
-    const data = await response.json();
-    reviews.value = data.reviews;
-    reviewsFullCount.value = data.reviews_full_count;
-    remaining.value = data.remaining;
-    courseShortName.value = data.course_short_name;
-    query.value = data.query; // Update the displayed query
-  } catch (e) {
     error.value = e.message;
   } finally {
     loading.value = false;
@@ -146,48 +137,22 @@ const fetchReviews = async () => {
 };
 
 const performSearch = () => {
-  router.push({ query: { q: searchQuery.value } }); // Update the query in the route
+  router.push({ query: { q: searchQuery.value } });
 };
 
-// Watch for changes in the route query
 watch(
   () => route.query.q,
   (newQuery) => {
-    // Always update searchQuery and fetch when route changes
     searchQuery.value = newQuery || "";
     fetchReviews();
   },
-  { immediate: true },
 );
-
-// Watch for authentication status changes
-watch(isAuthenticated, (newAuth) => {
-  if (newAuth) {
-    // User just logged in, fetch reviews
-    fetchReviews();
-  }
-});
 
 onMounted(async () => {
   searchQuery.value = route.query.q || "";
   await checkAuthentication();
-  await fetchReviews();
+  await Promise.all([fetchReviews(), fetchCourseInfo()]);
 });
-
-const checkAuthentication = async () => {
-  try {
-    const response = await fetch("/api/user/status/");
-    if (response.ok) {
-      const data = await response.json();
-      isAuthenticated.value = data.isAuthenticated;
-    } else {
-      isAuthenticated.value = false;
-    }
-  } catch (e) {
-    console.error("Error checking authentication:", e);
-    isAuthenticated.value = false;
-  }
-};
 
 const updateReviewData = (updateData) => {
   const reviewIndex = reviews.value.findIndex(

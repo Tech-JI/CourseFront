@@ -1,0 +1,139 @@
+import { ref } from "vue";
+import { getCookie } from "../utils/cookies";
+import { apiFetch } from "../utils/api";
+
+export function useReviews() {
+  const loading = ref(false);
+  const error = ref(null);
+
+  const searchCourseReviews = async (courseId, q) => {
+    if (!courseId) return [];
+    try {
+      const response = await apiFetch(
+        `/api/courses/${courseId}/reviews/?q=${encodeURIComponent(q ?? "")}`,
+      );
+      if (!response.ok) {
+        const err = new Error(`HTTP error! status: ${response.status}`);
+        err.status = response.status;
+        throw err;
+      }
+      return await response.json();
+    } catch (e) {
+      error.value = e.message;
+      throw e;
+    }
+  };
+
+  const fetchUserReview = async (courseId) => {
+    if (!courseId) return null;
+    try {
+      const response = await apiFetch(
+        `/api/courses/${courseId}/reviews/?author=me`,
+      );
+      if (response.ok) {
+        const data = await response.json();
+        return Array.isArray(data) ? data[0] : data;
+      } else if (response.status === 404) {
+        return null;
+      } else {
+        console.error(
+          "useReviews: Error fetching user review",
+          response.status,
+        );
+        return null;
+      }
+    } catch (e) {
+      console.error("useReviews: Error fetching user review", e);
+      return null;
+    }
+  };
+
+  const submitReview = async (courseId, newReview) => {
+    try {
+      const response = await apiFetch(`/api/courses/${courseId}/reviews/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify(newReview),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const err = new Error(errorData?.detail || "Failed to submit review");
+        err.raw = errorData;
+        throw err;
+      }
+      return await response.json();
+    } catch (e) {
+      error.value = e.message;
+      throw e;
+    }
+  };
+
+  const deleteReview = async (reviewId) => {
+    try {
+      const response = await apiFetch(`/api/reviews/${reviewId}/`, {
+        method: "DELETE",
+        headers: { "X-CSRFToken": getCookie("csrftoken") },
+      });
+      if (!response.ok && response.status !== 204) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.detail || "Failed to delete review");
+      }
+      return true;
+    } catch (e) {
+      error.value = e.message;
+      throw e;
+    }
+  };
+
+  const vote = async (courseId, value, forLayup) => {
+    try {
+      const response = await apiFetch(`/api/courses/${courseId}/vote/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify({ value, forLayup }),
+      });
+      if (!response.ok) throw new Error("Vote failed");
+      return await response.json();
+    } catch (e) {
+      error.value = e.message;
+      throw e;
+    }
+  };
+
+  const voteOnReview = async (reviewId, isKudos) => {
+    try {
+      const response = await apiFetch(`/api/reviews/${reviewId}/vote/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify({ is_kudos: isKudos }),
+      });
+      if (!response.ok) throw new Error("Vote on review failed");
+      return await response.json();
+    } catch (e) {
+      error.value = e.message;
+      throw e;
+    }
+  };
+
+  return {
+    loading,
+    error,
+    searchCourseReviews,
+    fetchUserReview,
+    submitReview,
+    deleteReview,
+    vote,
+    voteOnReview,
+  };
+}
+
+export default { useReviews };
