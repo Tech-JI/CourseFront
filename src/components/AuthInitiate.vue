@@ -150,7 +150,9 @@ const onTurnstileVerified = async (token) => {
     redirectUrl.value = data.redirectUrl;
   } catch (e) {
     error.value = e.message;
-    turnstileRef.value?.reset();
+    // Do not auto-reset the widget here: a reset triggers the managed
+    // widget to re-execute, which calls initiateAuth again and can loop
+    // forever when the backend keeps failing.
   } finally {
     isLoading.value = false;
   }
