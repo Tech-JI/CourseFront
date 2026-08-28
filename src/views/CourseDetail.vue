@@ -432,6 +432,10 @@
                     :placeholder="currentTerm"
                     class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   />
+                  <p class="mt-1 text-sm text-gray-500">
+                    Use YYSP, YYSU, or YYFA (for example, 26SP). Capitalization
+                    is normalized automatically.
+                  </p>
                   <p v-if="formErrors.term" class="mt-1 text-sm text-red-600">
                     {{ formErrors.term[0] }}
                   </p>
@@ -627,7 +631,7 @@ const router = useRouter();
 const course = ref(null);
 const loading = ref(true);
 const error = ref(null);
-const currentTerm = "25S";
+const currentTerm = "26SU";
 const { isAuthenticated, checkAuthentication } = useAuth();
 const { fetchCourse: fetchCourseFn } = useCourses();
 const {
@@ -743,8 +747,11 @@ const updateReviewData = (updateData) => {
 
 const validateReview = () => {
   const errs = {};
-  if (!newReview.value.term || newReview.value.term.length !== 3) {
-    errs.term = ["Please provide a valid term, e.g. 26F"];
+  const normalizedTerm = newReview.value.term.trim().toUpperCase();
+  if (!/^\d{2}(SP|SU|FA)$/.test(normalizedTerm)) {
+    errs.term = ["Please use YYSP, YYSU, or YYFA, e.g. 26SP"];
+  } else {
+    newReview.value.term = normalizedTerm;
   }
   if (
     !newReview.value.professor ||
