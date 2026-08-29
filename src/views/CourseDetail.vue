@@ -349,9 +349,35 @@
       >
         <div class="bg-white overflow-hidden shadow sm:rounded-lg">
           <div class="px-4 py-5 sm:p-6">
-            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-6">
-              Reviews ({{ course.review_count }})
-            </h3>
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-lg font-medium leading-6 text-gray-900">
+                Reviews ({{ course.review_count }})
+              </h3>
+              <div class="flex gap-2">
+                <button
+                  @click="setReviewSortBy('term')"
+                  :class="[
+                    'px-3 py-1 text-sm rounded-md border',
+                    reviewSortBy === 'term'
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white text-gray-700 border-gray-300',
+                  ]"
+                >
+                  Sort by Term
+                </button>
+                <button
+                  @click="setReviewSortBy('professor')"
+                  :class="[
+                    'px-3 py-1 text-sm rounded-md border',
+                    reviewSortBy === 'professor'
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white text-gray-700 border-gray-300',
+                  ]"
+                >
+                  Sort by Professor
+                </button>
+              </div>
+            </div>
             <ReviewPagination
               :reviews="course.review_set"
               :is-authenticated="isAuthenticated"
@@ -631,6 +657,7 @@ const router = useRouter();
 const course = ref(null);
 const loading = ref(true);
 const error = ref(null);
+const reviewSortBy = ref("term");
 const currentTerm = "26SU";
 const { isAuthenticated, checkAuthentication } = useAuth();
 const { fetchCourse: fetchCourseFn } = useCourses();
@@ -686,12 +713,17 @@ const fetchCourse = async () => {
   loading.value = true;
   error.value = null;
   try {
-    course.value = await fetchCourseFn(courseId.value);
+    course.value = await fetchCourseFn(courseId.value, reviewSortBy.value);
   } catch (e) {
     error.value = e.message;
   } finally {
     loading.value = false;
   }
+};
+const setReviewSortBy = async (sortBy) => {
+  if (reviewSortBy.value === sortBy) return;
+  reviewSortBy.value = sortBy;
+  await fetchCourse();
 };
 
 const fetchUserReview = async () => {

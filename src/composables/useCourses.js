@@ -80,10 +80,12 @@ export function useCourses() {
     }
   };
 
-  const fetchCourse = async (courseId) => {
+  const fetchCourse = async (courseId, reviewSortBy = "term") => {
     if (!courseId) return null;
     try {
-      const response = await apiFetch(`/api/courses/${courseId}/`);
+      const response = await apiFetch(
+        `/api/courses/${courseId}/?review_sort_by=${reviewSortBy}`
+      );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
