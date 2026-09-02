@@ -4,8 +4,7 @@
       <div class="mb-8">
         <h1 class="text-3xl font-bold tracking-tight text-gray-900">Courses</h1>
         <p class="mt-2 text-sm text-gray-700">
-          Browse and discover courses at the University of Michigan–Shanghai
-          Jiao Tong University Joint Institute
+          Browse and discover courses at Global College
         </p>
       </div>
 
@@ -93,7 +92,7 @@
                     Quality Score
                   </option>
                   <option v-if="isAuthenticated" value="difficulty_score">
-                    Ease Score
+                    Difficulty Score
                   </option>
                 </select>
               </div>
