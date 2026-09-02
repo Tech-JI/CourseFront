@@ -4,8 +4,7 @@
       <div class="mb-8">
         <h1 class="text-3xl font-bold tracking-tight text-gray-900">Courses</h1>
         <p class="mt-2 text-sm text-gray-700">
-          Browse and discover courses at University of Michigan - Joint
-          Institute
+          Browse and discover courses at Global College
         </p>
       </div>
 
