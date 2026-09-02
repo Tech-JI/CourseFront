@@ -5,11 +5,14 @@
     <div class="px-4 py-5 sm:p-6">
       <div class="flex items-center justify-between">
         <div class="flex items-center">
-          <div v-if="review.term" class="text-sm font-medium text-indigo-800">
-            {{ review.term }}
+          <div
+            v-if="review.term || review.professor"
+            class="text-sm font-medium text-indigo-800"
+          >
+            <span v-if="review.term">{{ review.term }}</span>
             <span v-if="review.professor" class="text-indigo-600">
-              with {{ review.professor }}</span
-            >
+              <template v-if="review.term"> with </template>{{ review.professor }}
+            </span>
           </div>
         </div>
         <div v-if="review.created_at" class="text-xs text-indigo-500">

@@ -30,7 +30,7 @@
         ></div>
       </div>
 
-      <div class="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
+      <div class="mx-auto flex min-h-[calc(100vh-5rem)] max-w-2xl items-center py-12 sm:py-16">
         <div class="text-center">
           <h1 class="text-4xl font-bold tracking-tight sm:text-7xl">
             <span
@@ -44,7 +44,7 @@
             GC Course Review
           </h1>
           <p class="mt-4 text-xl tracking-tight text-gray-600 sm:text-2xl">
-            Coming really, really soon.
+            Find courses that fit your goals and workload.
           </p>
           <p class="mt-2 text-base text-gray-500">
             {{ reviewCount.toLocaleString() }} reviews and counting
@@ -92,7 +92,7 @@
               class="rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
               @click="goToLayups"
             >
-              Layups {{ !isAuthenticated ? "(login required)" : "" }}
+              Easiest Courses {{ !isAuthenticated ? "(login required)" : "" }}
             </button>
             <button
               class="rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
