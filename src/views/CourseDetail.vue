@@ -55,9 +55,13 @@
             v-if="course.courseoffering_set.length > 0"
             class="inline-flex items-center rounded-full bg-green-100 px-3 py-0.5 text-sm font-medium text-green-800"
           >
-            Offered {{ currentTerm }} ({{
-              course.courseoffering_set[0].period
-            }})
+            Offered {{ currentTerm }}<span
+              v-if="course.courseoffering_set[0].period"
+            >
+              ({{
+                course.courseoffering_set[0].period
+              }})</span
+            >
           </span>
           <span
             v-else-if="course.last_offered"
