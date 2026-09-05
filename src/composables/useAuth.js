@@ -33,6 +33,7 @@ function getTempTokenTimeoutSeconds() {
 
 // Global authentication state
 const isAuthenticated = ref(false);
+const isStaff = ref(false);
 
 export function useAuth() {
   const checkAuthentication = async () => {
@@ -41,13 +42,16 @@ export function useAuth() {
       if (response.ok) {
         const data = await response.json();
         isAuthenticated.value = !!data.isAuthenticated;
+        isStaff.value = !!data.is_staff;
         return isAuthenticated.value;
       }
       isAuthenticated.value = false;
+      isStaff.value = false;
       return isAuthenticated.value;
     } catch (e) {
       console.error("useAuth: checkAuthentication error:", e);
       isAuthenticated.value = false;
+      isStaff.value = false;
       return false;
     }
   };
@@ -110,6 +114,7 @@ export function useAuth() {
 
     if (data.is_logged_in) {
       isAuthenticated.value = true;
+      isStaff.value = false; // re-checked on next checkAuthentication()
       clearAuthFlowState();
     } else {
       localStorage.setItem(
@@ -143,6 +148,7 @@ export function useAuth() {
 
     if (action === "signup") {
       isAuthenticated.value = true;
+      isStaff.value = false; // re-checked on next checkAuthentication()
     }
     clearAuthFlowState();
     return await response.json();
@@ -168,6 +174,7 @@ export function useAuth() {
     }
 
     isAuthenticated.value = true;
+    isStaff.value = false; // re-checked on next checkAuthentication()
     return await response.json();
   };
 
@@ -182,6 +189,7 @@ export function useAuth() {
       });
       if (response.ok) {
         isAuthenticated.value = false;
+        isStaff.value = false;
         return true;
       } else {
         console.error("useAuth: logout failed", response.status);
@@ -195,6 +203,7 @@ export function useAuth() {
 
   return {
     isAuthenticated,
+    isStaff,
     checkAuthentication,
     initiateAuth,
     verifyCallback,
