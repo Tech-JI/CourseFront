@@ -30,7 +30,9 @@
         ></div>
       </div>
 
-      <div class="mx-auto flex min-h-[calc(100vh-5rem)] max-w-2xl items-center py-12 sm:py-16">
+      <div
+        class="mx-auto flex min-h-[calc(100vh-5rem)] max-w-2xl items-center justify-center py-12 sm:py-16"
+      >
         <div class="text-center">
           <h1 class="text-4xl font-bold tracking-tight sm:text-7xl">
             <span
