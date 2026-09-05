@@ -267,7 +267,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import {
   ArrowDownTrayIcon,
@@ -367,9 +367,15 @@ const ensureInstructors = async () => {
   }
 };
 
+let alive = true;
+onUnmounted(() => {
+  alive = false;
+});
+
 const pollUntilSettled = async () => {
-  for (let i = 0; i < 45; i++) {
+  for (let i = 0; i < 45 && alive; i++) {
     await loadSyllabi();
+    if (!alive) return;
     const stillWorking = syllabi.value.some((s) =>
       ["pending", "processing"].includes(s.status),
     );
