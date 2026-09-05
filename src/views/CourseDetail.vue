@@ -276,17 +276,23 @@
             </h3>
             <div class="flex flex-wrap gap-2">
               <span
-                v-for="(instructor, index) in course.instructors"
-                :key="index"
+                v-for="instructor in course.instructors"
+                :key="instructor.id"
                 class="inline-flex items-center rounded-full bg-gray-50 px-3 py-1 text-sm font-medium text-gray-700"
               >
                 <UsersIcon class="h-4 w-4 mr-1" />
-                {{ instructor }}
+                {{ instructor.name }}
               </span>
             </div>
           </div>
         </div>
       </div>
+
+      <SyllabusSection
+        :course-id="courseId"
+        :course-code="course.course_code"
+        :instructors="course.instructors || []"
+      />
 
       <div v-if="course.professors_and_review_count" class="mb-8">
         <div class="bg-white overflow-hidden shadow sm:rounded-lg">
@@ -655,6 +661,7 @@ import { useAuth } from "../composables/useAuth";
 import { useCourses } from "../composables/useCourses";
 import { useReviews } from "../composables/useReviews";
 import ReviewPagination from "../components/ReviewPagination.vue";
+import SyllabusSection from "../components/SyllabusSection.vue";
 
 const route = useRoute();
 const router = useRouter();
