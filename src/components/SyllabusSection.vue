@@ -179,6 +179,14 @@
                   <PencilIcon class="h-3 w-3 mr-1" />
                   Edit
                 </button>
+                <button
+                  v-if="isStaff"
+                  class="inline-flex items-center rounded-md bg-white px-2.5 py-1.5 text-xs font-semibold text-red-700 shadow-sm ring-1 ring-inset ring-red-300 hover:bg-red-50"
+                  @click="onDeleteSyllabus(syllabus)"
+                >
+                  <TrashIcon class="h-3 w-3 mr-1" />
+                  Delete
+                </button>
               </div>
 
               <div
@@ -227,10 +235,7 @@
                   />
                   Mark as primary version
                 </label>
-                <p
-                  v-if="editError"
-                  class="text-sm text-red-600"
-                >
+                <p v-if="editError" class="text-sm text-red-600">
                   {{ editError }}
                 </p>
                 <div class="flex justify-end gap-2">
@@ -255,6 +260,70 @@
       </div>
     </div>
 
+    <Transition
+      appear
+      enter-active-class="transition ease-out duration-100"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition ease-in duration-75"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <Dialog
+        :open="rejectNoticeOpen"
+        class="relative z-50"
+        @close="rejectNoticeOpen = false"
+      >
+        <div class="fixed inset-0 bg-gray-500/50" aria-hidden="true" />
+        <div class="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel
+            class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+          >
+            <DialogTitle class="text-lg font-semibold text-gray-900">
+              Syllabus rejected
+            </DialogTitle>
+            <p class="mt-1 text-sm text-gray-500">
+              The uploaded file does not match this course closely enough and
+              was not published.
+            </p>
+            <ul class="mt-4 space-y-3">
+              <li
+                v-for="item in rejectedItems"
+                :key="item.id"
+                class="rounded-md bg-red-50 p-3"
+              >
+                <p class="text-sm font-medium text-gray-900">
+                  {{ item.filename }}
+                </p>
+                <p
+                  v-if="item.matchScore !== null"
+                  class="mt-1 text-sm text-red-700"
+                >
+                  Match score: {{ item.matchScore }}/100
+                </p>
+                <ul
+                  v-if="item.flags.length"
+                  class="mt-1 list-disc pl-5 text-xs text-gray-600"
+                >
+                  <li v-for="flag in item.flags" :key="flag">
+                    {{ flag }}
+                  </li>
+                </ul>
+              </li>
+            </ul>
+            <div class="mt-5 flex justify-end">
+              <button
+                class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+                @click="rejectNoticeOpen = false"
+              >
+                Got it
+              </button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+    </Transition>
+
     <UploadSyllabusModal
       :open="uploadOpen"
       :course-id="courseId"
@@ -274,12 +343,14 @@ import {
   ArrowUpTrayIcon,
   ChevronDownIcon,
   PencilIcon,
+  TrashIcon,
 } from "@heroicons/vue/24/outline";
 import { MdPreview } from "md-editor-v3";
 import "md-editor-v3/lib/style.css";
 import { sanitize } from "../utils/sanitize";
 import { useAuth } from "../composables/useAuth";
 import { useSyllabi } from "../composables/useSyllabi";
+import { Dialog, DialogPanel, DialogTitle } from "@headlessui/vue";
 import UploadSyllabusModal from "./UploadSyllabusModal.vue";
 
 const props = defineProps({
@@ -290,8 +361,13 @@ const props = defineProps({
 
 const router = useRouter();
 const { isAuthenticated, isStaff } = useAuth();
-const { fetchSyllabi, fetchInstructors, downloadSyllabus, updateSyllabus } =
-  useSyllabi();
+const {
+  fetchSyllabi,
+  fetchInstructors,
+  downloadSyllabus,
+  updateSyllabus,
+  deleteSyllabus,
+} = useSyllabi();
 
 const syllabi = ref([]);
 const loading = ref(true);
@@ -307,6 +383,13 @@ const editForm = ref({
 });
 
 const localInstructors = ref([]);
+
+// Rejections discovered while watching our own upload; modal shows once per
+// page session so reopening the page does not re-remind.
+const rejectNoticeOpen = ref(false);
+const rejectedItems = ref([]);
+const notifiedRejectedIds = new Set();
+let watchingOwnUpload = false;
 
 // Passed-in live instructors plus any that only appear on uploaded rows.
 const instructors = computed(() => {
@@ -328,11 +411,13 @@ const instructors = computed(() => {
 const groupedSyllabi = computed(() => {
   const byInstructor = new Map();
   for (const instructor of instructors.value) {
+    const rows = syllabi.value.filter(
+      (s) => s.status !== "rejected" && s.instructor.id === instructor.id,
+    );
+    if (!rows.length) continue;
     byInstructor.set(instructor.id, {
       instructor,
-      syllabi: syllabi.value
-        .filter((s) => s.instructor.id === instructor.id)
-        .sort((a, b) => b.is_primary - a.is_primary || b.id - a.id),
+      syllabi: rows.sort((a, b) => b.is_primary - a.is_primary || b.id - a.id),
     });
   }
   return [...byInstructor.values()];
@@ -342,6 +427,7 @@ const STATUS_STYLES = {
   pending: { label: "Pending", cls: "bg-yellow-100 text-yellow-800" },
   processing: { label: "Processing", cls: "bg-blue-100 text-blue-800" },
   analyzed: { label: "Analyzed", cls: "bg-green-100 text-green-800" },
+  rejected: { label: "Rejected", cls: "bg-red-100 text-red-800" },
   failed: { label: "Failed", cls: "bg-red-100 text-red-800" },
 };
 const statusStyle = (status) =>
@@ -372,10 +458,30 @@ onUnmounted(() => {
   alive = false;
 });
 
+const collectRejections = () => {
+  const fresh = syllabi.value.filter(
+    (s) => s.status === "rejected" && !notifiedRejectedIds.has(s.id),
+  );
+  if (!fresh.length) return;
+  for (const syllabus of fresh) {
+    notifiedRejectedIds.add(syllabus.id);
+  }
+  rejectedItems.value = fresh.map((s) => ({
+    id: s.id,
+    filename: s.file.original_filename,
+    matchScore: s.verdict?.match_score ?? null,
+    flags: s.verdict?.flags ?? [],
+  }));
+  rejectNoticeOpen.value = true;
+};
+
 const pollUntilSettled = async () => {
   for (let i = 0; i < 45 && alive; i++) {
     await loadSyllabi();
     if (!alive) return;
+    // Only alert uploads we are still watching in this page session;
+    // reopening the page must not re-remind about old rejections.
+    if (watchingOwnUpload) collectRejections();
     const stillWorking = syllabi.value.some((s) =>
       ["pending", "processing"].includes(s.status),
     );
@@ -394,7 +500,18 @@ onMounted(async () => {
 
 const onUploaded = () => {
   uploadOpen.value = false;
+  watchingOwnUpload = true;
   pollUntilSettled();
+};
+
+const onDeleteSyllabus = async (syllabus) => {
+  if (!window.confirm(`Delete "${syllabus.file.original_filename}"?`)) return;
+  try {
+    await deleteSyllabus(syllabus.id);
+    await loadSyllabi();
+  } catch (e) {
+    window.alert(`Failed to delete: ${e.message}`);
+  }
 };
 
 const onUploadClick = () => {
@@ -444,7 +561,9 @@ const startEdit = (syllabus) => {
   editError.value = "";
   editForm.value = {
     summary_md: syllabus.summary_md ?? "",
-    verdictText: syllabus.verdict ? JSON.stringify(syllabus.verdict, null, 2) : "",
+    verdictText: syllabus.verdict
+      ? JSON.stringify(syllabus.verdict, null, 2)
+      : "",
     is_primary: syllabus.is_primary,
   };
 };
