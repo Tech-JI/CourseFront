@@ -4,7 +4,7 @@ import { apiFetch } from "../utils/api";
 const POLL_INTERVAL_MS = 4000;
 const POLL_MAX_TRIES = 30; // ~2 minutes of waiting on analysis
 
-const SETTLED_STATUSES = new Set(["analyzed", "failed"]);
+const SETTLED_STATUSES = new Set(["analyzed", "rejected", "failed"]);
 
 function extractError(response) {
   // Serializer errors arrive as {field: [messages]}; API errors as {detail}.
@@ -17,7 +17,9 @@ export function useSyllabi() {
     const response = await apiFetch(`/api/courses/${courseId}/syllabi/`);
     if (!response.ok) {
       const errorData = await extractError(response);
-      throw new Error(errorData?.detail || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData?.detail || `HTTP error! status: ${response.status}`,
+      );
     }
     return await response.json();
   };
@@ -27,7 +29,9 @@ export function useSyllabi() {
     const response = await apiFetch(`/api/courses/${courseId}/instructors`);
     if (!response.ok) {
       const errorData = await extractError(response);
-      throw new Error(errorData?.detail || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData?.detail || `HTTP error! status: ${response.status}`,
+      );
     }
     const data = await response.json();
     return Array.isArray(data) ? data : data.instructors || [];
@@ -83,6 +87,19 @@ export function useSyllabi() {
     return await response.json();
   };
 
+  const deleteSyllabus = async (syllabusId) => {
+    const response = await apiFetch(`/api/syllabi/${syllabusId}/`, {
+      method: "DELETE",
+      headers: { "X-CSRFToken": getCookie("csrftoken") },
+    });
+    if (!response.ok) {
+      const errorData = await extractError(response);
+      const err = new Error(errorData?.detail || "Failed to delete syllabus");
+      err.raw = errorData;
+      throw err;
+    }
+  };
+
   const stillProcessing = (syllabi) =>
     syllabi.some((s) => !SETTLED_STATUSES.has(s.status));
 
@@ -102,6 +119,7 @@ export function useSyllabi() {
     uploadSyllabus,
     downloadSyllabus,
     updateSyllabus,
+    deleteSyllabus,
     pollUntilSettled,
   };
 }

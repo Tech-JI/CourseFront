@@ -8,19 +8,10 @@
     leave-from-class="opacity-100"
     leave-to-class="opacity-0"
   >
-    <Dialog
-      :open="open"
-      class="relative z-50"
-      @close="handleClose"
-    >
-      <div
-        class="fixed inset-0 bg-gray-500/50"
-        aria-hidden="true"
-      />
+    <Dialog :open="open" class="relative z-50" @close="handleClose">
+      <div class="fixed inset-0 bg-gray-500/50" aria-hidden="true" />
       <div class="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel
-          class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
-        >
+        <DialogPanel class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
           <DialogTitle class="text-lg font-semibold text-gray-900">
             Upload Syllabus
           </DialogTitle>
@@ -30,10 +21,7 @@
             summarized automatically.
           </p>
 
-          <form
-            class="mt-4 space-y-4"
-            @submit.prevent="submit"
-          >
+          <form class="mt-4 space-y-4" @submit.prevent="submit">
             <div>
               <label
                 for="syllabus-instructor"
@@ -47,12 +35,7 @@
                 required
                 class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
               >
-                <option
-                  :value="null"
-                  disabled
-                >
-                  Select instructor…
-                </option>
+                <option :value="null" disabled>Select instructor…</option>
                 <option
                   v-for="instructor in instructors"
                   :key="instructor.id"
@@ -82,10 +65,7 @@
               </p>
             </div>
 
-            <div
-              v-if="uploadError"
-              class="rounded-md bg-red-50 p-3"
-            >
+            <div v-if="uploadError" class="rounded-md bg-red-50 p-3">
               <div class="text-sm text-red-700">{{ uploadError }}</div>
             </div>
 
@@ -153,10 +133,28 @@ const handleClose = () => {
   emit("close");
 };
 
+const ALLOWED_EXTENSIONS = [".pdf", ".docx"];
+const MAX_UPLOAD_SIZE = 20 * 1024 * 1024;
+
+const validateFile = () => {
+  const selected = file.value;
+  if (!selected) return "Select a file to upload.";
+  const dot = selected.name.lastIndexOf(".");
+  const extension = dot >= 0 ? selected.name.slice(dot).toLowerCase() : "";
+  if (!ALLOWED_EXTENSIONS.includes(extension)) {
+    return "Only PDF or DOCX files are allowed.";
+  }
+  if (selected.size > MAX_UPLOAD_SIZE) {
+    return "File exceeds the 20 MB upload limit.";
+  }
+  return null;
+};
+
 const submit = async () => {
   if (!file.value || !instructorId.value) return;
-  if (file.value.size > 20 * 1024 * 1024) {
-    uploadError.value = "File exceeds the 20 MB upload limit.";
+  const validationError = validateFile();
+  if (validationError) {
+    uploadError.value = validationError;
     return;
   }
   busy.value = true;
