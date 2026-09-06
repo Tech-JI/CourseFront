@@ -7,7 +7,7 @@
             <h3 class="text-lg font-medium leading-6 text-gray-900">Syllabi</h3>
             <p class="mt-1 text-sm text-gray-500">
               Uploaded by students, checked against the course automatically.
-              Downloading requires login.
+              Downloading is restricted to staff.
             </p>
           </div>
           <button
@@ -23,7 +23,7 @@
             class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
             @click="router.push('/login')"
           >
-            Login to upload or download
+            Login to upload syllabi
           </button>
         </div>
 
@@ -165,6 +165,7 @@
                   }}
                 </button>
                 <button
+                  v-if="isStaff"
                   class="inline-flex items-center rounded-md bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
                   @click="download(syllabus)"
                 >
@@ -537,8 +538,9 @@ const toggleSummary = (id) => {
 };
 
 const download = async (syllabus) => {
-  if (!isAuthenticated.value) {
-    router.push("/login");
+  // Download is staff-only (backend enforces is_staff); the button is
+  // hidden for non-staff, this guard covers programmatic calls.
+  if (!isStaff.value) {
     return;
   }
   try {
